@@ -3,13 +3,15 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signO
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- CONFIGURATION START ---
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBDTTyEWFBam2EEWK4X2VV5E-wUJx10V38",
+  authDomain: "her0s-quest.firebaseapp.com",
+  projectId: "her0s-quest",
+  storageBucket: "her0s-quest.firebasestorage.app",
+  messagingSenderId: "120264562008",
+  appId: "1:120264562008:web:69365314951dc05980812d",
+  measurementId: "G-BSGT8LZPKV"
 };
 // --- CONFIGURATION END ---
 
