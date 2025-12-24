@@ -75,3 +75,10 @@ input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--success)
   background: var(--primary); color: white; border: none; padding: 12px 24px;
   border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1em;
 }
+
+.hidden { display: none; }
+.tab-nav { display: flex; gap: 10px; margin-bottom: 20px; }
+.tab-nav button { flex: 1; padding: 10px; cursor: pointer; border: 1px solid #ccc; background: #f9f9f9; }
+.habit-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
+.completed { background-color: #e8f5e9; text-decoration: line-through; }
+#xpChart { max-width: 300px; margin: 0 auto; }

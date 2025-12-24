@@ -2,8 +2,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// --- CONFIGURATION START ---
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyBDTTyEWFBam2EEWK4X2VV5E-wUJx10V38",
   authDomain: "her0s-quest.firebaseapp.com",
@@ -13,28 +11,47 @@ const firebaseConfig = {
   appId: "1:120264562008:web:69365314951dc05980812d",
   measurementId: "G-BSGT8LZPKV"
 };
-// --- CONFIGURATION END ---
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-let state = { xp: 0, level: 1, totalPoints: 0, history: {} };
+// EXTENDED STATE
+let state = { 
+    xp: 0, 
+    level: 1, 
+    totalPoints: 0, 
+    categories: { physical: 0, mental: 0, financial: 0, spiritual: 0 },
+    history: {} 
+};
 let currentUser = null;
-const START_DATE = "2025-01-01";
+let currentTab = 'physical';
+let myChart = null;
 
-const ROUTINES = {
-  1: { name: "Push A", lifts: ["Flat Barbell Bench", "Strict OHP", "Close-Grip Bench", "Lateral Raises"] },
-  2: { name: "Pull A", lifts: ["Conv. Deadlift", "Weighted Pull-Ups", "Barbell Pendlay Row", "Face Pulls"] },
-  3: { name: "Legs A", lifts: ["Barbell Squat", "Romanian Deadlift", "Bulgarian Split Squat", "Standing Calf Raises"] },
-  4: { name: "Push B", lifts: ["Heavy OHP", "Incline Barbell Bench", "DB Skull Crushers", "Lateral Raises"] },
-  5: { name: "Pull B", lifts: ["Strict Barbell Row", "Weighted Pull-Ups", "Chest-Supported Row", "Face Pulls"] },
-  6: { name: "Legs B", lifts: ["Barbell Squat", "Heavy Deadlift", "Leg Curls", "Seated Calf Raises"] },
-  0: { name: "Rest & Recovery", lifts: ["Active Recovery Walk", "Mobility Flow"] }
+const ALL_QUESTS = {
+    physical: [
+        { name: "Layer 1 Stretches", xp: 15 },
+        { name: "10 min Jump Rope", xp: 10 },
+        { name: "Workout Session", xp: 30 }
+    ],
+    mental: [
+        { name: "Read 10 Pages", xp: 15 },
+        { name: "Coding Practice", xp: 20 },
+        { name: "Meditation", xp: 10 }
+    ],
+    financial: [
+        { name: "Track Expenses", xp: 10 },
+        { name: "Review Budget", xp: 20 },
+        { name: "Market Research", xp: 15 }
+    ],
+    spiritual: [
+        { name: "Bible Reading", xp: 10 },
+        { name: "Morning Prayer", xp: 10 },
+        { name: "Journaling", xp: 15 }
+    ]
 };
 
-// AUTHENTICATION OBSERVER
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
@@ -51,112 +68,91 @@ onAuthStateChanged(auth, async (user) => {
 document.getElementById('google-login-btn').onclick = () => signInWithPopup(auth, provider);
 document.getElementById('logout-btn').onclick = () => signOut(auth);
 
-// DATABASE OPS
 async function loadData() {
   const docSnap = await getDoc(doc(db, "users", currentUser.uid));
-  if (docSnap.exists()) state = docSnap.data();
+  if (docSnap.exists()) {
+      const data = docSnap.data();
+      // Merge with default state to prevent errors if new categories are added
+      state = { ...state, ...data };
+  }
   render();
 }
 
 async function saveData() {
-  if (currentUser) {
-    await setDoc(doc(db, "users", currentUser.uid), state);
-  }
+  if (currentUser) await setDoc(doc(db, "users", currentUser.uid), state);
 }
 
-// LOGIC FUNCTIONS
-window.toggleTask = async (taskName, xp) => {
+window.switchTab = (tab) => {
+    currentTab = tab;
+    render();
+};
+
+window.toggleTask = async (taskName, xp, cat) => {
   const today = new Date().toISOString().split('T')[0];
   if (!state.history[today]) state.history[today] = {};
   if (!state.history[today][taskName]) state.history[today][taskName] = { done: false, note: "" };
 
   const t = state.history[today][taskName];
   t.done = !t.done;
-  state.xp += t.done ? xp : -xp;
-  state.totalPoints += t.done ? xp : -xp;
+  
+  const multiplier = t.done ? 1 : -1;
+  state.xp += (xp * multiplier);
+  state.totalPoints += (xp * multiplier);
+  state.categories[cat] = (state.categories[cat] || 0) + (xp * multiplier);
 
   while (state.xp >= 100) { state.level++; state.xp -= 100; }
+  while (state.xp < 0 && state.level > 1) { state.level--; state.xp += 100; }
+  
   render();
   await saveData();
 };
 
-window.updateNote = async (taskName, val) => {
-  const today = new Date().toISOString().split('T')[0];
-  if (!state.history[today]) state.history[today] = {};
-  if (!state.history[today][taskName]) state.history[today][taskName] = { done: false, note: "" };
-  
-  state.history[today][taskName].note = val;
-  await saveData();
-};
-
-// UI RENDERING
 function render() {
   const todayKey = new Date().toISOString().split('T')[0];
-  const dayOfWeek = new Date().getDay();
-  
-  // Stats
   document.getElementById('level-display').textContent = `Level ${state.level}`;
   document.getElementById('xp-fill').style.width = `${state.xp}%`;
-  document.getElementById('xp-fill').textContent = `${state.xp}/100 XP`;
   document.getElementById('stat-points').textContent = state.totalPoints;
-  document.getElementById('stat-lvl').textContent = state.level;
-  document.getElementById('current-date').textContent = new Date().toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'});
-
-  // Reference for "Last Week" (7 days ago)
-  const lastWeekDate = new Date();
-  lastWeekDate.setDate(lastWeekDate.getDate() - 7);
-  const lastWeekKey = lastWeekDate.toISOString().split('T')[0];
 
   const list = document.getElementById('habit-list');
-  list.innerHTML = '';
-
-  const dailyQuests = [
-    { name: "🧘 Layer 1 Stretches", xp: 15 },
-    { name: "🤸 Calisthenics Skills", xp: 20 },
-    { name: "📖 Bible Reading", xp: 10 }
-  ];
-
-  if (dayOfWeek !== 0) {
-    dailyQuests.push({ name: "🏃 10 min Jump Rope", xp: 10 });
-    ROUTINES[dayOfWeek].lifts.forEach(l => dailyQuests.push({ name: `🏋️ ${l}`, xp: 10 }));
+  const statsSec = document.getElementById('stats-section');
+  
+  if (currentTab === 'stats') {
+      list.classList.add('hidden');
+      statsSec.classList.remove('hidden');
+      updateChart();
+  } else {
+      list.classList.remove('hidden');
+      statsSec.classList.add('hidden');
+      list.innerHTML = '';
+      
+      ALL_QUESTS[currentTab].forEach(q => {
+          const taskData = state.history[todayKey]?.[q.name] || { done: false, note: "" };
+          const div = document.createElement('div');
+          div.className = `habit-item ${taskData.done ? 'completed' : ''}`;
+          div.innerHTML = `
+            <span>${q.name} (+${q.xp} XP)</span>
+            <input type="checkbox" ${taskData.done ? 'checked' : ''} 
+                   onclick="toggleTask('${q.name}', ${q.xp}, '${currentTab}')">
+          `;
+          list.appendChild(div);
+      });
   }
-
-  dailyQuests.forEach(q => {
-    const taskData = state.history[todayKey]?.[q.name] || { done: false, note: "" };
-    const lastWeekNote = state.history[lastWeekKey]?.[q.name]?.note || "No data";
-    
-    const div = document.createElement('div');
-    div.className = `habit-item ${taskData.done ? 'completed' : ''}`;
-    div.innerHTML = `
-      <div class="habit-header">
-        <span class="habit-name">${q.name}</span>
-        <input type="checkbox" ${taskData.done ? 'checked' : ''} onclick="toggleTask('${q.name}', ${q.xp})">
-      </div>
-      <div class="last-week-ref">🕒 Last Week: <span class="last-week-val">${lastWeekNote}</span></div>
-      <input type="text" class="note-input" placeholder="Weight / Reps / Progress" value="${taskData.note}" onchange="updateNote('${q.name}', this.value)">
-    `;
-    list.appendChild(div);
-  });
-
-  renderCalendar();
 }
 
-function renderCalendar() {
-  const cal = document.getElementById('calendar'); cal.innerHTML = '';
-  const start = new Date(START_DATE);
-  // Render 35 days (5 weeks) from Jan 1
-  for (let i = 0; i < 35; i++) {
-    const d = new Date(start); d.setDate(start.getDate() + i);
-    const dStr = d.toISOString().split('T')[0];
-    const dayEl = document.createElement('div');
-    dayEl.className = 'day';
-    
-    if (state.history[dStr] && Object.values(state.history[dStr]).some(v => v.done)) {
-      dayEl.classList.add('completed');
+function updateChart() {
+    const ctx = document.getElementById('xpChart').getContext('2d');
+    const chartData = {
+        labels: ['Physical', 'Mental', 'Financial', 'Spiritual'],
+        datasets: [{
+            data: [state.categories.physical, state.categories.mental, state.categories.financial, state.categories.spiritual],
+            backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0']
+        }]
+    };
+
+    if (myChart) {
+        myChart.data = chartData;
+        myChart.update();
+    } else {
+        myChart = new Chart(ctx, { type: 'pie', data: chartData });
     }
-    if (dStr === new Date().toISOString().split('T')[0]) dayEl.classList.add('today');
-    
-    dayEl.textContent = d.getDate();
-    cal.appendChild(dayEl);
-  }
 }

@@ -1,11 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>A Hero's Quest</title>
-  <link rel="stylesheet" href="style.css">
-</head>
+ <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div id="login-screen">
+    <button id="google-login-btn">Sign in with Google</button>
+</div>
+
+<div id="app-screen" class="hidden">
+    <header>
+        <h1 id="user-name">Loading...</h1>
+        <div class="stats-bar">
+            <span id="level-display">Level 1</span>
+            <div class="xp-bar"><div id="xp-fill"></div></div>
+            <button id="logout-btn">Logout</button>
+        </div>
+    </header>
+
+    <nav class="tab-nav">
+        <button onclick="switchTab('physical')">Physical</button>
+        <button onclick="switchTab('mental')">Mental</button>
+        <button onclick="switchTab('financial')">Financial</button>
+        <button onclick="switchTab('spiritual')">Spiritual</button>
+        <button onclick="switchTab('stats')">Stats</button>
+    </nav>
+
+    <main id="tab-container">
+        <h2 id="current-date"></h2>
+        
+        <div id="habit-list"></div>
+
+        <div id="stats-section" class="hidden">
+            <h3>Progress Distribution</h3>
+            <canvas id="xpChart" width="400" height="400"></canvas>
+            <p>Total Points: <span id="stat-points">0</span></p>
+        </div>
+    </main>
+</div>
 <body>
 
   <div id="login-screen" class="container">
