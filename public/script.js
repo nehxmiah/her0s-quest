@@ -17,7 +17,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// EXTENDED STATE
 let state = { 
     xp: 0, 
     level: 1, 
@@ -42,13 +41,11 @@ const ALL_QUESTS = {
     ],
     financial: [
         { name: "Track Expenses", xp: 10 },
-        { name: "Review Budget", xp: 20 },
-        { name: "Market Research", xp: 15 }
+        { name: "Review Budget", xp: 20 }
     ],
     spiritual: [
         { name: "Bible Reading", xp: 10 },
-        { name: "Morning Prayer", xp: 10 },
-        { name: "Journaling", xp: 15 }
+        { name: "Morning Prayer", xp: 10 }
     ]
 };
 
@@ -71,9 +68,7 @@ document.getElementById('logout-btn').onclick = () => signOut(auth);
 async function loadData() {
   const docSnap = await getDoc(doc(db, "users", currentUser.uid));
   if (docSnap.exists()) {
-      const data = docSnap.data();
-      // Merge with default state to prevent errors if new categories are added
-      state = { ...state, ...data };
+      state = { ...state, ...docSnap.data() };
   }
   render();
 }
@@ -84,13 +79,16 @@ async function saveData() {
 
 window.switchTab = (tab) => {
     currentTab = tab;
+    document.querySelectorAll('.tab-nav button').forEach(btn => {
+        btn.classList.toggle('active', btn.innerText.toLowerCase() === tab);
+    });
     render();
 };
 
 window.toggleTask = async (taskName, xp, cat) => {
   const today = new Date().toISOString().split('T')[0];
   if (!state.history[today]) state.history[today] = {};
-  if (!state.history[today][taskName]) state.history[today][taskName] = { done: false, note: "" };
+  if (!state.history[today][taskName]) state.history[today][taskName] = { done: false };
 
   const t = state.history[today][taskName];
   t.done = !t.done;
@@ -110,29 +108,36 @@ window.toggleTask = async (taskName, xp, cat) => {
 function render() {
   const todayKey = new Date().toISOString().split('T')[0];
   document.getElementById('level-display').textContent = `Level ${state.level}`;
+  document.getElementById('stat-lvl').textContent = state.level;
   document.getElementById('xp-fill').style.width = `${state.xp}%`;
-  document.getElementById('stat-points').textContent = state.totalPoints;
+  document.getElementById('xp-fill').textContent = `${state.xp}/100 XP`;
+  document.getElementById('total-xp-display').textContent = state.totalPoints;
+  document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   const list = document.getElementById('habit-list');
+  const questSec = document.getElementById('quest-section');
   const statsSec = document.getElementById('stats-section');
   
   if (currentTab === 'stats') {
-      list.classList.add('hidden');
+      questSec.classList.add('hidden');
       statsSec.classList.remove('hidden');
       updateChart();
   } else {
-      list.classList.remove('hidden');
+      questSec.classList.remove('hidden');
       statsSec.classList.add('hidden');
+      document.getElementById('tab-title').innerText = `📜 ${currentTab.charAt(0).toUpperCase() + currentTab.slice(1)} Quests`;
       list.innerHTML = '';
       
       ALL_QUESTS[currentTab].forEach(q => {
-          const taskData = state.history[todayKey]?.[q.name] || { done: false, note: "" };
+          const isDone = state.history[todayKey]?.[q.name]?.done || false;
           const div = document.createElement('div');
-          div.className = `habit-item ${taskData.done ? 'completed' : ''}`;
+          div.className = `habit-item ${isDone ? 'completed' : ''}`;
           div.innerHTML = `
-            <span>${q.name} (+${q.xp} XP)</span>
-            <input type="checkbox" ${taskData.done ? 'checked' : ''} 
-                   onclick="toggleTask('${q.name}', ${q.xp}, '${currentTab}')">
+            <div class="habit-header">
+                <span class="habit-name">${q.name} (+${q.xp} XP)</span>
+                <input type="checkbox" ${isDone ? 'checked' : ''} 
+                       onclick="toggleTask('${q.name}', ${q.xp}, '${currentTab}')">
+            </div>
           `;
           list.appendChild(div);
       });
@@ -141,18 +146,22 @@ function render() {
 
 function updateChart() {
     const ctx = document.getElementById('xpChart').getContext('2d');
-    const chartData = {
-        labels: ['Physical', 'Mental', 'Financial', 'Spiritual'],
-        datasets: [{
-            data: [state.categories.physical, state.categories.mental, state.categories.financial, state.categories.spiritual],
-            backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0']
-        }]
-    };
-
+    const dataValues = [state.categories.physical, state.categories.mental, state.categories.financial, state.categories.spiritual];
+    
     if (myChart) {
-        myChart.data = chartData;
+        myChart.data.datasets[0].data = dataValues;
         myChart.update();
     } else {
-        myChart = new Chart(ctx, { type: 'pie', data: chartData });
+        myChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Physical', 'Mental', 'Financial', 'Spiritual'],
+                datasets: [{
+                    data: dataValues,
+                    backgroundColor: ['#58a6ff', '#d2a8ff', '#238636', '#f093fb']
+                }]
+            },
+            options: { plugins: { legend: { labels: { color: '#c9d1d9' } } } }
+        });
     }
 }
