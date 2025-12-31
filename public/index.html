@@ -2,29 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="description" content="Hero's Quest - Track your physical, mental, and spiritual progress">
-  <meta name="theme-color" content="#000000">
-  <title>Hero's Quest</title>
-
-  <!-- Preconnect for performance -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="description" content="Hero's Quest - Gamify your life and track your habits">
+  <meta name="theme-color" content="#00f2ff">
+  <title>Hero's Quest - Gamified Habit Tracker</title>
 
   <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Space+Grotesk:wght@400;500;700&family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;700;900&family=Righteous&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Space+Grotesk:wght@400;500;700&family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;700;900&family=Righteous&display=swap" rel="stylesheet">
 
   <!-- Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cal-heatmap@4/cal-heatmap.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4"></script>
-
-  <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  
+  <!-- Confetti for level-up -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
   <link rel="stylesheet" href="style.css">
 </head>
@@ -32,89 +27,161 @@
   <canvas id="webGLApp" aria-hidden="true"></canvas>
   <div id="customCursor" aria-hidden="true"></div>
 
-  <!-- Loading Overlay -->
-  <div id="loading-overlay" class="loading-overlay hidden">
-    <div class="spinner"></div>
-    <p>Loading...</p>
+  <!-- Loading Spinner -->
+  <div id="loading-spinner" class="spinner hidden" role="status">
+    <div class="spinner-ring"></div>
+    <span class="sr-only">Loading...</span>
   </div>
 
   <!-- Login Screen -->
-  <div id="login-screen" class="container">
-    <h1>HERO'S QUEST</h1>
-    <p class="subtitle">Level up your life</p>
-    <button id="google-login-btn" class="btn-primary">
+  <div id="login-screen" class="container" role="main">
+    <h1 class="login-title">HERO'S QUEST</h1>
+    <p class="login-subtitle">Transform your life, one quest at a time</p>
+    <button id="google-login-btn" class="btn-primary" aria-label="Sign in with Google">
       <i class="fab fa-google"></i> START REDEMPTION
     </button>
+    <div id="login-error" class="error-message hidden" role="alert"></div>
   </div>
 
   <!-- Main App -->
-  <div id="app-screen" class="container hidden">
-    <header class="glass">
+  <div id="app-screen" class="container hidden" role="main">
+    <header class="glass" role="banner">
       <div class="user-row">
-        <span id="user-name">HERO</span>
-        <button id="logout-btn" class="btn-text" aria-label="Logout">LOGOUT</button>
+        <div class="user-info">
+          <span id="avatar" aria-label="User avatar">🦸‍♂️</span>
+          <span id="user-name">HERO</span>
+        </div>
+        <button id="logout-btn" class="btn-text" aria-label="Logout">
+          <i class="fas fa-sign-out-alt"></i> LOGOUT
+        </button>
       </div>
-      <div id="level-display">LVL 1</div>
+      <div id="level-display" aria-live="polite">LVL 1</div>
       <div class="xp-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
         <div id="xp-fill"></div>
         <span id="xp-text">0 / 100 XP</span>
+      </div>
+      <div class="gold-info">Gold: <span id="gold">0</span> 🪙</div>
+      <div class="date-row">
+        <span id="current-date"></span>
+        <span id="current-page"></span>
       </div>
     </header>
 
     <!-- Navigation -->
     <nav class="main-nav" role="navigation" aria-label="Main navigation">
-      <button onclick="switchTab('physical')" class="nav-btn active" aria-label="Physical quests">
+      <button onclick="switchTab('physical')" aria-label="Physical quests">
         <i class="fas fa-dumbbell"></i><span>PHY</span>
       </button>
-      <button onclick="switchTab('mental')" class="nav-btn" aria-label="Mental quests">
+      <button onclick="switchTab('mental')" aria-label="Mental quests">
         <i class="fas fa-brain"></i><span>MEN</span>
       </button>
-      <button onclick="switchTab('spiritual')" class="nav-btn" aria-label="Spiritual quests">
+      <button onclick="switchTab('spiritual')" aria-label="Spiritual quests">
         <i class="fas fa-cross"></i><span>SPI</span>
       </button>
-      <button onclick="switchTab('blights')" class="nav-btn blight-btn" aria-label="Blights">
-        <i class="fas fa-biohazard"></i>
+      <button onclick="switchTab('blights')" aria-label="Blights to avoid">
+        <i class="fas fa-biohazard"></i><span>BLT</span>
       </button>
-      <button onclick="switchTab('stats')" class="nav-btn" aria-label="Statistics">
-        <i class="fas fa-chart-line"></i><span>STATS</span>
+      <button onclick="switchTab('stats')" aria-label="Statistics">
+        <i class="fas fa-scroll"></i><span>STATS</span>
+      </button>
+      <button onclick="switchTab('shop')" aria-label="Shop">
+        🪪<span>SHOP</span>
       </button>
     </nav>
 
-    <!-- Quests View -->
+    <!-- Quest Area -->
     <main id="quest-area">
       <h2 id="view-title">PHYSICAL</h2>
+      <div id="motivational-quote" class="quote-box" aria-live="polite">
+        <div class="quote-skeleton"></div>
+      </div>
       <div id="habit-list" role="list"></div>
 
       <div id="action-panel" class="glass">
-        <input id="new-name" type="text" placeholder="Quest name..." maxlength="50" aria-label="Quest name">
-        <input id="new-xp" type="number" placeholder="XP" min="-1000" max="1000" aria-label="XP value">
-        <button onclick="addNewQuest()" class="btn-plus" aria-label="Add quest">
+        <input 
+          id="new-name" 
+          type="text"
+          placeholder="Quest name..." 
+          maxlength="50"
+          aria-label="New quest name"
+        >
+        <input 
+          id="new-xp" 
+          type="number" 
+          placeholder="XP"
+          min="-100"
+          max="500"
+          aria-label="XP value"
+        >
+        <label class="checkbox-label">
+          <input id="new-repeat" type="checkbox" aria-label="Daily quest"> 
+          <span>Daily</span>
+        </label>
+        <button 
+          onclick="addNewQuest()" 
+          class="btn-plus"
+          aria-label="Add new quest"
+        >
           <i class="fas fa-plus"></i>
         </button>
       </div>
     </main>
 
-    <!-- Stats View -->
-    <section id="stats-area" class="glass hidden">
-      <h3><i class="fas fa-chart-line"></i> Last 7 Days</h3>
+    <!-- Stats Area -->
+    <section id="stats-area" class="glass hidden" aria-labelledby="stats-title">
+      <h2 id="stats-title" class="sr-only">Statistics</h2>
+      
+      <h3>Last 7 Days</h3>
       <div class="chart-container">
-        <canvas id="xpChart" aria-label="XP chart for last 7 days"></canvas>
+        <canvas id="xpChart" aria-label="XP progress chart"></canvas>
       </div>
 
-      <h3><i class="fas fa-calendar-alt"></i> Yearly Heatmap</h3>
+      <h3>Yearly Heatmap</h3>
       <div id="cal-heatmap" aria-label="Yearly activity heatmap"></div>
 
-      <div id="streak-info" role="status" aria-live="polite">
-        <i class="fas fa-fire"></i> Streak: 0 days
-      </div>
+      <div id="streak-info" aria-live="polite">Streak: 0 days 🔥</div>
 
-      <h3><i class="fas fa-trophy"></i> Leaderboard</h3>
-      <div id="scoreboard-list" role="list"></div>
+      <h3>Badges Earned</h3>
+      <div id="badges-list" role="list" aria-label="Earned badges"></div>
+
+      <h3>Leaderboard</h3>
+      <div id="scoreboard-list" role="list" aria-label="Top players"></div>
+
+      <button id="weekly-report" class="btn-primary">
+        <i class="fas fa-file-alt"></i> Weekly Report
+      </button>
     </section>
-  </div>
 
-  <!-- Error Toast -->
-  <div id="error-toast" class="toast hidden" role="alert"></div>
+    <!-- Shop Area -->
+    <section id="shop-area" class="glass hidden" aria-labelledby="shop-title">
+      <h2 id="shop-title">Hero's Shop</h2>
+      <div id="shop-items" role="list"></div>
+    </section>
+
+    <!-- Rating Modal -->
+    <div id="rating-modal" class="modal hidden" role="dialog" aria-labelledby="modal-quest-name" aria-modal="true">
+      <div class="modal-content glass">
+        <h3 id="modal-quest-name">Rate Quest</h3>
+        <p class="modal-description">How well did you complete this quest?</p>
+        <div class="stars" role="radiogroup" aria-label="Quest rating">
+          <i class="far fa-star" data-value="1" role="radio" aria-label="1 star" tabindex="0"></i>
+          <i class="far fa-star" data-value="2" role="radio" aria-label="2 stars" tabindex="0"></i>
+          <i class="far fa-star" data-value="3" role="radio" aria-label="3 stars" tabindex="0"></i>
+          <i class="far fa-star" data-value="4" role="radio" aria-label="4 stars" tabindex="0"></i>
+          <i class="far fa-star" data-value="5" role="radio" aria-label="5 stars" tabindex="0"></i>
+        </div>
+        <div class="moods" role="radiogroup" aria-label="Current mood">
+          <span data-mood="happy" role="radio" aria-label="Happy" tabindex="0">😊</span>
+          <span data-mood="neutral" role="radio" aria-label="Neutral" tabindex="0">😐</span>
+          <span data-mood="sad" role="radio" aria-label="Sad" tabindex="0">😔</span>
+        </div>
+        <div class="modal-buttons">
+          <button id="cancel-rating" class="btn-text">Cancel</button>
+          <button id="confirm-rating" class="btn-primary">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script type="module" src="script.js"></script>
 </body>
