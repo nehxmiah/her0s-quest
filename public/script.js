@@ -64,8 +64,8 @@ class LiquidApp {
         const geometry = new THREE.PlaneGeometry(100, 100);
         this.uniforms = {
             uTime: { value: 0 },
-            uColor1: { value: new THREE.Vector3(0.94, 0.35, 0.13) }, // Orange
-            uColor2: { value: new THREE.Vector3(0.04, 0.05, 0.15) }, // Navy
+            uColor1: { value: new THREE.Vector3(0.94, 0.35, 0.13) }, 
+            uColor2: { value: new THREE.Vector3(0.04, 0.05, 0.15) }, 
             uTouchTexture: { value: this.touchTexture.texture }
         };
         const material = new THREE.ShaderMaterial({
@@ -94,13 +94,12 @@ class LiquidApp {
 
 // --- FIREBASE CONFIG ---
 const firebaseConfig = {
-  apiKey: "AIzaSyBDTTyEWFBam2EEWK4X2VV5E-wUJx10V38",
-  authDomain: "her0s-quest.firebaseapp.com",
-  projectId: "her0s-quest",
-  storageBucket: "her0s-quest.firebasestorage.app",
-  messagingSenderId: "120264562008",
-  appId: "1:120264562008:web:69365314951dc05980812d",
-  measurementId: "G-BSGT8LZPKV"
+    apiKey: "AIzaSyBDTTyEWFBam2EEWK4X2VV5E-wUJx10V38",
+    authDomain: "her0s-quest.firebaseapp.com",
+    projectId: "her0s-quest",
+    storageBucket: "her0s-quest.firebasestorage.app",
+    messagingSenderId: "120264562008",
+    appId: "1:120264562008:web:69365314951dc05980812d"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -110,19 +109,30 @@ const provider = new GoogleAuthProvider();
 
 window.liquidApp = new LiquidApp();
 
-let state = { xp: 0, level: 1, totalPoints: 0, categories: { physical: 0, mental: 0, financial: 0, spiritual: 0 }, history: {} };
+// --- STATE & DATA ---
+let state = { 
+    xp: 0, 
+    level: 1, 
+    totalPoints: 0, 
+    categories: { physical: 0, mental: 0, spiritual: 0, blights: 0 }, 
+    history: {} 
+};
 let currentUser = null;
 let currentTab = 'physical';
 let myChart = null;
 
 const ALL_QUESTS = {
-    physical: [{ name: "Layer 1 Stretches", xp: 15 }, { name: "10 min Jump Rope", xp: 10 }, { name: "Workout Session", xp: 30 }],
-    mental: [{ name: "Read 10 Pages", xp: 15 }, { name: "Coding Practice", xp: 20 }, { name: "Meditation", xp: 10 }],
-    financial: [{ name: "Track Expenses", xp: 10 }, { name: "Review Budget", xp: 20 }],
-    spiritual: [{ name: "Bible Reading", xp: 10 }, { name: "Morning Prayer", xp: 10 }]
+    physical: [{ name: "Layer 1 Stretches", xp: 15 }, { name: "10 min Jump Rope", xp: 10 }, { name: "Workout", xp: 30 }],
+    mental: [{ name: "Read 10 Pages", xp: 15 }, { name: "Coding", xp: 20 }, { name: "Meditation", xp: 10 }],
+    spiritual: [{ name: "Bible Reading", xp: 10 }, { name: "Morning Prayer", xp: 10 }],
+    blights: [
+        { name: "Missed Streak", xp: -20 },
+        { name: "Watched Adult Content", xp: -50 },
+        { name: "Drinking / Smoking", xp: -40 }
+    ]
 };
 
-// --- AUTH HANDLERS ---
+// --- AUTH ---
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
@@ -139,10 +149,11 @@ onAuthStateChanged(auth, async (user) => {
 document.getElementById('google-login-btn').onclick = () => signInWithPopup(auth, provider);
 document.getElementById('logout-btn').onclick = () => signOut(auth);
 
-// --- DATA METHODS ---
 async function loadData() {
   const docSnap = await getDoc(doc(db, "users", currentUser.uid));
-  if (docSnap.exists()) state = { ...state, ...docSnap.data() };
+  if (docSnap.exists()) {
+      state = { ...state, ...docSnap.data() };
+  }
   render();
 }
 
@@ -150,66 +161,103 @@ async function saveData() {
   if (currentUser) await setDoc(doc(db, "users", currentUser.uid), state);
 }
 
+// --- CORE LOGIC ---
 window.switchTab = (tab) => {
     currentTab = tab;
-    document.querySelectorAll('.tab-nav button').forEach(btn => {
-        btn.classList.toggle('active', btn.innerText.toLowerCase() === tab);
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('onclick').includes(tab));
     });
+    
+    // Liquid Color Feedback
+    if (tab === 'blights' && window.liquidApp) {
+        window.liquidApp.uniforms.uColor1.value.set(0.5, 0.0, 0.0);
+        window.liquidApp.uniforms.uColor2.value.set(0.1, 0.0, 0.0);
+    } else if (window.liquidApp) {
+        window.liquidApp.uniforms.uColor1.value.set(0.94, 0.35, 0.13);
+        window.liquidApp.uniforms.uColor2.value.set(0.04, 0.05, 0.15);
+    }
     render();
 };
 
+window.applyPenalty = async (name, xpLoss) => {
+    document.getElementById('app-screen').classList.add('shake-effect');
+    setTimeout(() => document.getElementById('app-screen').classList.remove('shake-effect'), 300);
+
+    state.xp += xpLoss;
+    state.totalPoints += xpLoss;
+    state.categories.blights = (state.categories.blights || 0) + Math.abs(xpLoss);
+
+    while (state.xp < 0) {
+        if (state.level > 1) {
+            state.level--;
+            state.xp += 100;
+        } else {
+            state.xp = 0;
+            break;
+        }
+    }
+    render();
+    await saveData();
+};
+
 window.toggleTask = async (taskName, xp, cat) => {
-  const today = new Date().toISOString().split('T')[0];
-  if (!state.history[today]) state.history[today] = {};
-  if (!state.history[today][taskName]) state.history[today][taskName] = { done: false };
+    const today = new Date().toISOString().split('T')[0];
+    if (!state.history[today]) state.history[today] = {};
+    if (!state.history[today][taskName]) state.history[today][taskName] = { done: false };
 
-  const t = state.history[today][taskName];
-  t.done = !t.done;
-  const multiplier = t.done ? 1 : -1;
-  state.xp += (xp * multiplier);
-  state.totalPoints += (xp * multiplier);
-  state.categories[cat] = (state.categories[cat] || 0) + (xp * multiplier);
+    const t = state.history[today][taskName];
+    t.done = !t.done;
+    const multiplier = t.done ? 1 : -1;
+    
+    state.xp += (xp * multiplier);
+    state.totalPoints += (xp * multiplier);
+    state.categories[cat] = (state.categories[cat] || 0) + (xp * multiplier);
 
-  while (state.xp >= 100) { state.level++; state.xp -= 100; }
-  while (state.xp < 0 && state.level > 1) { state.level--; state.xp += 100; }
-  
-  render();
-  await saveData();
+    while (state.xp >= 100) { state.level++; state.xp -= 100; }
+    while (state.xp < 0 && state.level > 1) { state.level--; state.xp += 100; }
+    
+    render();
+    await saveData();
 };
 
 function render() {
-  const todayKey = new Date().toISOString().split('T')[0];
-  document.getElementById('level-display').textContent = `Level ${state.level}`;
-  document.getElementById('xp-fill').style.width = `${state.xp}%`;
-  document.getElementById('xp-fill').textContent = `${state.xp}/100 XP`;
-  document.getElementById('stat-points').textContent = state.totalPoints;
-  document.getElementById('stat-lvl').textContent = state.level;
+    const list = document.getElementById('habit-list');
+    const todayKey = new Date().toISOString().split('T')[0];
+    
+    document.getElementById('level-display').textContent = `Level ${state.level}`;
+    document.getElementById('xp-fill').style.width = `${Math.max(0, state.xp)}%`;
+    document.getElementById('xp-fill').textContent = `${Math.max(0, state.xp)}/100 XP`;
+    document.getElementById('stat-points').textContent = Math.floor(state.totalPoints);
+    document.getElementById('stat-lvl').textContent = state.level;
 
-  const list = document.getElementById('habit-list');
-  const questSec = document.getElementById('quest-section');
-  const statsSec = document.getElementById('stats-section');
-  
-  if (currentTab === 'stats') {
-      questSec.classList.add('hidden');
-      statsSec.classList.remove('hidden');
-      updateChart();
-  } else {
-      questSec.classList.remove('hidden');
-      statsSec.classList.add('hidden');
-      list.innerHTML = '';
-      ALL_QUESTS[currentTab].forEach(q => {
-          const isDone = state.history[todayKey]?.[q.name]?.done || false;
-          const div = document.createElement('div');
-          div.className = `habit-item ${isDone ? 'completed' : ''}`;
-          div.innerHTML = `<span>${q.name} (+${q.xp} XP)</span><input type="checkbox" ${isDone ? 'checked' : ''} onclick="toggleTask('${q.name}', ${q.xp}, '${currentTab}')">`;
-          list.appendChild(div);
-      });
-  }
+    if (currentTab === 'stats') {
+        document.getElementById('quest-section').classList.add('hidden');
+        document.getElementById('stats-section').classList.remove('hidden');
+        updateChart();
+    } else {
+        document.getElementById('quest-section').classList.remove('hidden');
+        document.getElementById('stats-section').classList.add('hidden');
+        document.getElementById('tab-title').textContent = currentTab === 'blights' ? "⚠️ Active Blights" : "📜 Today's Quests";
+        
+        list.innerHTML = '';
+        ALL_QUESTS[currentTab].forEach(item => {
+            const div = document.createElement('div');
+            if (currentTab === 'blights') {
+                div.className = 'habit-item penalty';
+                div.innerHTML = `<span>${item.name} (${item.xp} XP)</span><button class="btn-penalty" onclick="applyPenalty('${item.name}', ${item.xp})">FAIL</button>`;
+            } else {
+                const isDone = state.history[todayKey]?.[item.name]?.done || false;
+                div.className = `habit-item ${isDone ? 'completed' : ''}`;
+                div.innerHTML = `<span>${item.name} (+${item.xp} XP)</span><input type="checkbox" ${isDone ? 'checked' : ''} onclick="toggleTask('${item.name}', ${item.xp}, '${currentTab}')">`;
+            }
+            list.appendChild(div);
+        });
+    }
 }
 
 function updateChart() {
     const ctx = document.getElementById('xpChart').getContext('2d');
-    const dataValues = [state.categories.physical, state.categories.mental, state.categories.financial, state.categories.spiritual];
+    const dataValues = [state.categories.physical, state.categories.mental, state.categories.spiritual, state.categories.blights];
     if (myChart) {
         myChart.data.datasets[0].data = dataValues;
         myChart.update();
@@ -217,20 +265,18 @@ function updateChart() {
         myChart = new Chart(ctx, {
             type: 'pie',
             data: {
-                labels: ['Physical', 'Mental', 'Financial', 'Spiritual'],
-                datasets: [{ data: dataValues, backgroundColor: ['#58a6ff', '#d2a8ff', '#238636', '#f5576c'] }]
+                labels: ['Physical', 'Mental', 'Spiritual', 'Blights'],
+                datasets: [{ data: dataValues, backgroundColor: ['#58a6ff', '#d2a8ff', '#f5576c', '#ff4d4d'] }]
             },
-            options: { plugins: { legend: { labels: { color: '#c9d1d9' } } } }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#c9d1d9' } } } }
         });
     }
 }
 
-// Cursor Logic
+// Cursor
 const cursor = document.getElementById('customCursor');
 document.addEventListener('mousemove', (e) => {
     cursor.style.left = e.clientX + 'px';
     cursor.style.top = e.clientY + 'px';
-    if(window.liquidApp) {
-        window.liquidApp.touchTexture.addTouch({ x: e.clientX/window.innerWidth, y: 1-(e.clientY/window.innerHeight) });
-    }
+    if(window.liquidApp) window.liquidApp.touchTexture.addTouch({ x: e.clientX/window.innerWidth, y: 1-(e.clientY/window.innerHeight) });
 });

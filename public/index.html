@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hero's Quest</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Hero's Quest: Redemption</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body id="app-body">
     <div id="customCursor"></div>
 
     <div id="login-screen" class="container">
-        <div class="header">
-            <h1>🛡️ A Hero's Quest</h1>
-            <p>Log in to sync your strength journey to the cloud.</p>
+        <div class="header glass">
+            <h1>🛡️ Hero's Quest</h1>
+            <p>Face your blights. Level your life.</p>
             <button id="google-login-btn" class="btn-primary">Sign in with Google</button>
         </div>
     </div>
@@ -23,27 +24,32 @@
         <div class="header glass">
             <div class="user-meta">
                 <span id="user-name">Hero</span>
-                <button id="logout-btn">Logout</button>
+                <button id="logout-btn" style="background:none; border:none; color:var(--accent); cursor:pointer;">Logout</button>
             </div>
-            <h1>⚔️ A Hero's Quest</h1>
+            <h1>⚔️ Hero's Quest</h1>
             <div class="level-badge" id="level-display">Level 1</div>
             <div class="progress-bar">
                 <div id="xp-fill" class="progress-fill">0/100 XP</div>
             </div>
-            <div id="current-date" class="date-display"></div>
         </div>
 
         <nav class="tab-nav">
-            <button onclick="switchTab('physical')" class="active">Physical</button>
-            <button onclick="switchTab('mental')">Mental</button>
-            <button onclick="switchTab('financial')">Financial</button>
-            <button onclick="switchTab('spiritual')">Spiritual</button>
-            <button onclick="switchTab('stats')">Stats</button>
+            <button onclick="switchTab('physical')" class="tab-btn active">Physical</button>
+            <button onclick="switchTab('mental')" class="tab-btn">Mental</button>
+            <button onclick="switchTab('spiritual')" class="tab-btn">Spiritual</button>
+            <button onclick="switchTab('blights')" class="tab-btn" style="color: #ff4d4d;">⚠️ Blights</button>
+            <button onclick="switchTab('stats')" class="tab-btn">Stats</button>
         </nav>
 
-        <div class="stats-grid">
-            <div class="stat-card"><div class="stat-value" id="stat-points">0</div><div>Total XP</div></div>
-            <div class="stat-card"><div class="stat-value" id="stat-lvl">1</div><div>Hero Rank</div></div>
+        <div class="stats-grid" style="display:flex; gap:10px; margin-bottom:20px;">
+            <div class="section" style="flex:1; text-align:center;">
+                <div class="stat-value" id="stat-points" style="font-size:1.5rem; color:var(--primary);">0</div>
+                <div style="font-size:0.8rem;">Total XP</div>
+            </div>
+            <div class="section" style="flex:1; text-align:center;">
+                <div class="stat-value" id="stat-lvl" style="font-size:1.5rem; color:var(--accent);">1</div>
+                <div style="font-size:0.8rem;">Hero Rank</div>
+            </div>
         </div>
 
         <main id="tab-container">
@@ -54,7 +60,7 @@
 
             <div id="stats-section" class="section hidden">
                 <h2>📊 Progress Distribution</h2>
-                <canvas id="xpChart"></canvas>
+                <div style="height: 300px;"><canvas id="xpChart"></canvas></div>
             </div>
         </main>
     </div>
