@@ -307,29 +307,131 @@ function updateHeader() {
 // ============================================
 // MOTIVATIONAL QUOTE
 // ============================================
-
+// === Quote ===
 async function loadQuote() {
   const box = document.getElementById('motivational-quote');
   if (!box) return;
 
   box.innerHTML = '<div class="quote-skeleton"></div>';
 
+  // Rich fallback quotes organized by theme
+  const fallbackQuotes = {
+    physical: [
+      { q: "The body achieves what the mind believes.", a: "Napoleon Hill" },
+      { q: "Take care of your body. It's the only place you have to live.", a: "Jim Rohn" },
+      { q: "Physical fitness is the basis of dynamic and creative intellectual activity.", a: "John F. Kennedy" },
+      { q: "The only bad workout is the one that didn't happen.", a: "Fitness Wisdom" },
+      { q: "Strength does not come from physical capacity. It comes from an indomitable will.", a: "Mahatma Gandhi" },
+      { q: "The groundwork of all happiness is health.", a: "Leigh Hunt" },
+      { q: "Movement is a medicine for creating change in a person's physical, emotional, and mental states.", a: "Carol Welch" },
+      { q: "Your body can stand almost anything. It's your mind that you have to convince.", a: "Andrew Murphy" },
+      { q: "The first wealth is health.", a: "Ralph Waldo Emerson" },
+      { q: "A healthy outside starts from the inside.", a: "Robert Urich" }
+    ],
+    mental: [
+      { q: "Reading is to the mind what exercise is to the body.", a: "Joseph Addison" },
+      { q: "The mind is everything. What you think you become.", a: "Buddha" },
+      { q: "An investment in knowledge pays the best interest.", a: "Benjamin Franklin" },
+      { q: "Education is the most powerful weapon which you can use to change the world.", a: "Nelson Mandela" },
+      { q: "The only true wisdom is in knowing you know nothing.", a: "Socrates" },
+      { q: "Learning never exhausts the mind.", a: "Leonardo da Vinci" },
+      { q: "The beautiful thing about learning is that no one can take it away from you.", a: "B.B. King" },
+      { q: "Intelligence is the ability to adapt to change.", a: "Stephen Hawking" },
+      { q: "The capacity to learn is a gift; the ability to learn is a skill; the willingness to learn is a choice.", a: "Brian Herbert" },
+      { q: "Live as if you were to die tomorrow. Learn as if you were to live forever.", a: "Mahatma Gandhi" }
+    ],
+    spiritual: [
+      { q: "Peace comes from within. Do not seek it without.", a: "Buddha" },
+      { q: "The soul always knows what to do to heal itself. The challenge is to silence the mind.", a: "Caroline Myss" },
+      { q: "Meditation is the tongue of the soul and the language of our spirit.", a: "Jeremy Taylor" },
+      { q: "Your task is not to seek for love, but merely to seek and find all the barriers within yourself.", a: "Rumi" },
+      { q: "Be still and know.", a: "Psalm 46:10" },
+      { q: "The privilege of a lifetime is to become who you truly are.", a: "Carl Jung" },
+      { q: "Spirituality is recognizing the divine light that is within us all.", a: "Muhammad Ali" },
+      { q: "When you do things from your soul, you feel a river moving in you, a joy.", a: "Rumi" },
+      { q: "The soul has been given its own ears to hear things the mind does not understand.", a: "Rumi" },
+      { q: "Your sacred space is where you can find yourself again and again.", a: "Joseph Campbell" }
+    ],
+    blights: [
+      { q: "The greatest glory in living lies not in never falling, but in rising every time we fall.", a: "Nelson Mandela" },
+      { q: "Our greatest weakness lies in giving up. The most certain way to succeed is always to try just one more time.", a: "Thomas Edison" },
+      { q: "Fall seven times, stand up eight.", a: "Japanese Proverb" },
+      { q: "Rock bottom became the solid foundation on which I rebuilt my life.", a: "J.K. Rowling" },
+      { q: "It's not whether you get knocked down, it's whether you get up.", a: "Vince Lombardi" },
+      { q: "Strength doesn't come from what you can do. It comes from overcoming the things you once thought you couldn't.", a: "Rikki Rogers" },
+      { q: "Every adversity carries with it the seed of an equal or greater benefit.", a: "Napoleon Hill" },
+      { q: "You may have to fight a battle more than once to win it.", a: "Margaret Thatcher" },
+      { q: "The comeback is always stronger than the setback.", a: "Unknown" },
+      { q: "Failure is simply the opportunity to begin again, this time more intelligently.", a: "Henry Ford" }
+    ],
+    general: [
+      { q: "The only way to do great work is to love what you do.", a: "Steve Jobs" },
+      { q: "Believe you can and you're halfway there.", a: "Theodore Roosevelt" },
+      { q: "Success is not final, failure is not fatal: it is the courage to continue that counts.", a: "Winston Churchill" },
+      { q: "The future belongs to those who believe in the beauty of their dreams.", a: "Eleanor Roosevelt" },
+      { q: "Don't watch the clock; do what it does. Keep going.", a: "Sam Levenson" },
+      { q: "Everything you've ever wanted is on the other side of fear.", a: "George Addair" },
+      { q: "It does not matter how slowly you go as long as you do not stop.", a: "Confucius" },
+      { q: "Small daily improvements over time lead to stunning results.", a: "Robin Sharma" },
+      { q: "The secret of getting ahead is getting started.", a: "Mark Twain" },
+      { q: "It always seems impossible until it's done.", a: "Nelson Mandela" },
+      { q: "Don't limit yourself. Many people limit themselves to what they think they can do.", a: "Mary Kay Ash" },
+      { q: "The only impossible journey is the one you never begin.", a: "Tony Robbins" },
+      { q: "In the middle of every difficulty lies opportunity.", a: "Albert Einstein" },
+      { q: "What you get by achieving your goals is not as important as what you become.", a: "Zig Ziglar" },
+      { q: "You don't have to be great to start, but you have to start to be great.", a: "Zig Ziglar" },
+      { q: "The way to get started is to quit talking and begin doing.", a: "Walt Disney" },
+      { q: "If you can dream it, you can do it.", a: "Walt Disney" },
+      { q: "The best time to plant a tree was 20 years ago. The second best time is now.", a: "Chinese Proverb" },
+      { q: "Your limitation—it's only your imagination.", a: "Unknown" },
+      { q: "Great things never come from comfort zones.", a: "Unknown" }
+    ]
+  };
+
+  // Function to show fallback quote
+  const showFallbackQuote = () => {
+    const themeQuotes = fallbackQuotes[currentTab] || fallbackQuotes.general;
+    const allQuotes = [...themeQuotes, ...fallbackQuotes.general];
+    
+    const today = new Date().toISOString().slice(0, 10);
+    const seed = today.split('-').reduce((acc, val) => acc + parseInt(val), 0);
+    const quoteIndex = seed % allQuotes.length;
+    const selectedQuote = allQuotes[quoteIndex];
+    
+    box.innerHTML = `<p>"${selectedQuote.q}"</p><small>— ${selectedQuote.a}</small>`;
+  };
+
+  // Try API first, but don't let it block the UI
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
 
-    const res = await fetch('https://zenquotes.io/api/random', {
-      signal: controller.signal
+    const tags = ['inspirational', 'motivational', 'success', 'perseverance', 'wisdom'];
+    const randomTag = tags[Math.floor(Math.random() * tags.length)];
+    
+    const res = await fetch(`https://api.quotable.io/random?tags=${randomTag}&maxLength=150`, {
+      signal: controller.signal,
+      mode: 'cors',
+      cache: 'no-cache'
     });
+    
     clearTimeout(timeoutId);
 
-    if (!res.ok) throw new Error('Quote fetch failed');
-
-    const [quote] = await res.json();
-    box.innerHTML = `<p>"${sanitizeInput(quote.q)}"</p><small>— ${sanitizeInput(quote.a)}</small>`;
+    if (res.ok) {
+      const quote = await res.json();
+      if (quote && quote.content && quote.author) {
+        box.innerHTML = `<p>"${sanitizeInput(quote.content)}"</p><small>— ${sanitizeInput(quote.author)}</small>`;
+        return;
+      }
+    }
+    
+    throw new Error('Invalid quote response');
+    
   } catch (error) {
-    console.warn('Failed to load quote:', error);
-    box.innerHTML = `<p>"Keep pushing forward."</p><small>— Your Future Self</small>`;
+    if (error.name !== 'AbortError') {
+      console.log('Using fallback quote (API unavailable)');
+    }
+    showFallbackQuote();
   }
 }
 
