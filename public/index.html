@@ -128,28 +128,81 @@
     </main>
 
     <!-- Stats Area -->
-    <section id="stats-area" class="glass hidden" aria-labelledby="stats-title">
-      <h2 id="stats-title" class="sr-only">Statistics</h2>
+    <section id="stats-area" class="hidden" aria-labelledby="stats-title">
+      <h2 id="stats-title" class="stats-main-title">YOUR LEGEND</h2>
       
-      <h3>Last 7 Days</h3>
-      <div class="chart-container">
-        <canvas id="xpChart" aria-label="XP progress chart"></canvas>
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card glass">
+          <div class="stat-icon">📊</div>
+          <div class="stat-value" id="total-xp-stat">0</div>
+          <div class="stat-label">Total XP</div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon">🏆</div>
+          <div class="stat-value" id="level-stat">1</div>
+          <div class="stat-label">Level</div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon">🔥</div>
+          <div class="stat-value" id="streak-stat">0</div>
+          <div class="stat-label">Day Streak</div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon">🪙</div>
+          <div class="stat-value" id="gold-stat">0</div>
+          <div class="stat-label">Gold</div>
+        </div>
       </div>
 
-      <h3>Yearly Heatmap</h3>
-      <div id="cal-heatmap" aria-label="Yearly activity heatmap"></div>
+      <!-- Chart Section -->
+      <div class="stats-section glass">
+        <h3 class="stats-section-title">
+          <i class="fas fa-chart-line"></i> Weekly Progress
+        </h3>
+        <div class="chart-container">
+          <canvas id="xpChart" aria-label="XP progress chart"></canvas>
+        </div>
+      </div>
 
-      <div id="streak-info" aria-live="polite">Streak: 0 days 🔥</div>
+      <!-- Streak Section -->
+      <div class="stats-section glass">
+        <h3 class="stats-section-title">
+          <i class="fas fa-fire"></i> Current Streak
+        </h3>
+        <div id="streak-info" aria-live="polite">Streak: 0 days 🔥</div>
+      </div>
 
-      <h3>Badges Earned</h3>
-      <div id="badges-list" role="list" aria-label="Earned badges"></div>
+      <!-- Heatmap Section -->
+      <div class="stats-section glass">
+        <h3 class="stats-section-title">
+          <i class="fas fa-calendar"></i> Yearly Activity
+        </h3>
+        <div id="cal-heatmap" aria-label="Yearly activity heatmap"></div>
+      </div>
 
-      <h3>Leaderboard</h3>
-      <div id="scoreboard-list" role="list" aria-label="Top players"></div>
+      <!-- Badges Section -->
+      <div class="stats-section glass">
+        <h3 class="stats-section-title">
+          <i class="fas fa-medal"></i> Badges Earned
+        </h3>
+        <div id="badges-list" role="list" aria-label="Earned badges"></div>
+      </div>
 
-      <button id="weekly-report" class="btn-primary">
-        <i class="fas fa-file-alt"></i> Weekly Report
-      </button>
+      <!-- Leaderboard Section -->
+      <div class="stats-section glass">
+        <h3 class="stats-section-title">
+          <i class="fas fa-crown"></i> Leaderboard
+        </h3>
+        <div id="scoreboard-list" role="list" aria-label="Top players"></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="stats-actions">
+        <button id="weekly-report" class="btn-primary btn-report">
+          <i class="fas fa-file-alt"></i> Weekly Report
+        </button>
+      </div>
     </section>
 
     <!-- Shop Area -->
