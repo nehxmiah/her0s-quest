@@ -1,70 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Hero's Quest: Redemption</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&family=Space+Grotesk:wght@700&family=Orbitron:wght@900&family=Cinzel:wght@700&family=Press+Start+2P&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Hero's Quest - Track your physical, mental, and spiritual progress">
+  <meta name="theme-color" content="#000000">
+  <title>Hero's Quest</title>
+
+  <!-- Preconnect for performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Space+Grotesk:wght@400;500;700&family=Orbitron:wght@400;700;900&family=Cinzel:wght@400;700;900&family=Righteous&family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <!-- Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cal-heatmap@4/cal-heatmap.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4"></script>
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <link rel="stylesheet" href="style.css">
 </head>
 <body data-theme="login">
-    <canvas id="webGLApp"></canvas>
-    <div id="customCursor"></div>
+  <canvas id="webGLApp" aria-hidden="true"></canvas>
+  <div id="customCursor" aria-hidden="true"></div>
 
-    <div id="login-screen" class="container">
-        <h1 class="glitch-text" data-text="HERO'S QUEST">HERO'S QUEST</h1>
-        <div class="glass login-card">
-            <p>Step into the cycle of redemption.</p>
-            <button id="google-login-btn" class="btn-primary">START REDEMPTION</button>
-        </div>
-    </div>
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="loading-overlay hidden">
+    <div class="spinner"></div>
+    <p>Loading...</p>
+  </div>
 
-    <div id="app-screen" class="container hidden">
-        <header class="glass header-main">
-            <div class="user-info">
-                <span id="user-name">HERO</span>
-                <button id="logout-btn" class="logout-pill">EXIT</button>
-            </div>
-            <div id="level-display">LVL 1</div>
-            <div class="xp-wrapper">
-                <div class="xp-bar"><div id="xp-fill"></div></div>
-                <span id="xp-text">0 / 100 XP</span>
-            </div>
-        </header>
+  <!-- Login Screen -->
+  <div id="login-screen" class="container">
+    <h1>HERO'S QUEST</h1>
+    <p class="subtitle">Level up your life</p>
+    <button id="google-login-btn" class="btn-primary">
+      <i class="fab fa-google"></i> START REDEMPTION
+    </button>
+  </div>
 
-        <nav class="main-nav">
-            <button onclick="switchTab('physical')" title="Physical">PHY</button>
-            <button onclick="switchTab('mental')" title="Mental">MEN</button>
-            <button onclick="switchTab('spiritual')" title="Spiritual">SPI</button>
-            <button onclick="switchTab('blights')" class="blight-btn">☣</button>
-            <button onclick="switchTab('stats')" title="Stats">📜</button>
-        </nav>
+  <!-- Main App -->
+  <div id="app-screen" class="container hidden">
+    <header class="glass">
+      <div class="user-row">
+        <span id="user-name">HERO</span>
+        <button id="logout-btn" class="btn-text" aria-label="Logout">LOGOUT</button>
+      </div>
+      <div id="level-display">LVL 1</div>
+      <div class="xp-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+        <div id="xp-fill"></div>
+        <span id="xp-text">0 / 100 XP</span>
+      </div>
+    </header>
 
-        <main id="quest-area">
-            <h2 id="view-title">PHYSICAL</h2>
-            <div id="habit-list"></div>
-            
-            <div id="action-panel" class="glass">
-                <input id="new-name" placeholder="Name your quest...">
-                <input id="new-xp" type="number" placeholder="XP">
-                <button onclick="addNewQuest()" class="btn-add">+</button>
-            </div>
-        </main>
+    <!-- Navigation -->
+    <nav class="main-nav" role="navigation" aria-label="Main navigation">
+      <button onclick="switchTab('physical')" class="nav-btn active" aria-label="Physical quests">
+        <i class="fas fa-dumbbell"></i><span>PHY</span>
+      </button>
+      <button onclick="switchTab('mental')" class="nav-btn" aria-label="Mental quests">
+        <i class="fas fa-brain"></i><span>MEN</span>
+      </button>
+      <button onclick="switchTab('spiritual')" class="nav-btn" aria-label="Spiritual quests">
+        <i class="fas fa-cross"></i><span>SPI</span>
+      </button>
+      <button onclick="switchTab('blights')" class="nav-btn blight-btn" aria-label="Blights">
+        <i class="fas fa-biohazard"></i>
+      </button>
+      <button onclick="switchTab('stats')" class="nav-btn" aria-label="Statistics">
+        <i class="fas fa-chart-line"></i><span>STATS</span>
+      </button>
+    </nav>
 
-        <section id="stats-area" class="hidden">
-            <div class="glass chart-container">
-                <h3>PROGRESSION</h3>
-                <canvas id="xpChart"></canvas>
-            </div>
-            <div class="glass leaderboard-container">
-                <h3>LEADERBOARD</h3>
-                <div id="scoreboard-list"></div>
-            </div>
-        </section>
-    </div>
+    <!-- Quests View -->
+    <main id="quest-area">
+      <h2 id="view-title">PHYSICAL</h2>
+      <div id="habit-list" role="list"></div>
 
-    <script type="module" src="script.js"></script>
+      <div id="action-panel" class="glass">
+        <input id="new-name" type="text" placeholder="Quest name..." maxlength="50" aria-label="Quest name">
+        <input id="new-xp" type="number" placeholder="XP" min="-1000" max="1000" aria-label="XP value">
+        <button onclick="addNewQuest()" class="btn-plus" aria-label="Add quest">
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+    </main>
+
+    <!-- Stats View -->
+    <section id="stats-area" class="glass hidden">
+      <h3><i class="fas fa-chart-line"></i> Last 7 Days</h3>
+      <div class="chart-container">
+        <canvas id="xpChart" aria-label="XP chart for last 7 days"></canvas>
+      </div>
+
+      <h3><i class="fas fa-calendar-alt"></i> Yearly Heatmap</h3>
+      <div id="cal-heatmap" aria-label="Yearly activity heatmap"></div>
+
+      <div id="streak-info" role="status" aria-live="polite">
+        <i class="fas fa-fire"></i> Streak: 0 days
+      </div>
+
+      <h3><i class="fas fa-trophy"></i> Leaderboard</h3>
+      <div id="scoreboard-list" role="list"></div>
+    </section>
+  </div>
+
+  <!-- Error Toast -->
+  <div id="error-toast" class="toast hidden" role="alert"></div>
+
+  <script type="module" src="script.js"></script>
 </body>
 </html>
