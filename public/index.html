@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hero's Quest</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Orbitron:wght@700&family=Righteous&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Hero's Quest: Redemption</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&family=Space+Grotesk:wght@700&family=Orbitron:wght@900&family=Cinzel:wght@700&family=Press+Start+2P&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
@@ -14,39 +14,54 @@
     <div id="customCursor"></div>
 
     <div id="login-screen" class="container">
-        <h1>HERO'S QUEST</h1>
-        <button id="google-login-btn" class="btn-primary">START REDEMPTION</button>
+        <h1 class="glitch-text" data-text="HERO'S QUEST">HERO'S QUEST</h1>
+        <div class="glass login-card">
+            <p>Step into the cycle of redemption.</p>
+            <button id="google-login-btn" class="btn-primary">START REDEMPTION</button>
+        </div>
     </div>
 
     <div id="app-screen" class="container hidden">
-        <header class="glass">
-            <div><span id="user-name">HERO</span> <button id="logout-btn" class="btn-text">LOGOUT</button></div>
+        <header class="glass header-main">
+            <div class="user-info">
+                <span id="user-name">HERO</span>
+                <button id="logout-btn" class="logout-pill">EXIT</button>
+            </div>
             <div id="level-display">LVL 1</div>
-            <div class="xp-bar"><div id="xp-fill"></div><span id="xp-text">0 / 100 XP</span></div>
+            <div class="xp-wrapper">
+                <div class="xp-bar"><div id="xp-fill"></div></div>
+                <span id="xp-text">0 / 100 XP</span>
+            </div>
         </header>
 
         <nav class="main-nav">
-            <button onclick="switchTab('physical')">PHY</button>
-            <button onclick="switchTab('mental')">MEN</button>
-            <button onclick="switchTab('spiritual')">SPI</button>
-            <button onclick="switchTab('blights')">☣</button>
-            <button onclick="switchTab('stats')">📜</button>
+            <button onclick="switchTab('physical')" title="Physical">PHY</button>
+            <button onclick="switchTab('mental')" title="Mental">MEN</button>
+            <button onclick="switchTab('spiritual')" title="Spiritual">SPI</button>
+            <button onclick="switchTab('blights')" class="blight-btn">☣</button>
+            <button onclick="switchTab('stats')" title="Stats">📜</button>
         </nav>
 
         <main id="quest-area">
             <h2 id="view-title">PHYSICAL</h2>
             <div id="habit-list"></div>
+            
             <div id="action-panel" class="glass">
-                <input id="new-name" placeholder="Quest name...">
+                <input id="new-name" placeholder="Name your quest...">
                 <input id="new-xp" type="number" placeholder="XP">
-                <button onclick="addNewQuest()" class="btn-plus">+</button>
+                <button onclick="addNewQuest()" class="btn-add">+</button>
             </div>
         </main>
 
-        <section id="stats-area" class="glass hidden">
-            <h3>Last 7 Days</h3><canvas id="xpChart"></canvas>
-            <div id="streak-info">Streak: 0 days 🔥</div>
-            <h3>Leaderboard</h3><div id="scoreboard-list"></div>
+        <section id="stats-area" class="hidden">
+            <div class="glass chart-container">
+                <h3>PROGRESSION</h3>
+                <canvas id="xpChart"></canvas>
+            </div>
+            <div class="glass leaderboard-container">
+                <h3>LEADERBOARD</h3>
+                <div id="scoreboard-list"></div>
+            </div>
         </section>
     </div>
 
