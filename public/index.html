@@ -4,65 +4,61 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hero's Quest: Redemption</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;700;900&family=Playfair+Display:ital@0;1&family=Space+Grotesk:wght@700&family=Syne:wght@800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-<body id="app-body">
+<body data-theme="login">
+    <canvas id="webGLApp"></canvas>
     <div id="customCursor"></div>
 
     <div id="login-screen" class="container">
-        <div class="header glass">
-            <h1>🛡️ Hero's Quest</h1>
-            <p>Face your blights. Level your life.</p>
-            <button id="google-login-btn" class="btn-primary">Sign in with Google</button>
+        <h1 class="hero-title">HERO'S QUEST</h1>
+        <div class="login-box glass">
+            <button id="google-login-btn" class="btn-primary">START REDEMPTION</button>
         </div>
+        <footer class="footer">MADE BY BEINGS</footer>
     </div>
 
     <div id="app-screen" class="container hidden">
-        <div class="header glass">
-            <div class="user-meta">
-                <span id="user-name">Hero</span>
-                <button id="logout-btn" style="background:none; border:none; color:var(--accent); cursor:pointer;">Logout</button>
+        <header class="header glass">
+            <div class="user-row">
+                <span id="user-name">HERO</span>
+                <button id="logout-btn" class="btn-text">LOGOUT</button>
             </div>
-            <h1>⚔️ Hero's Quest</h1>
-            <div class="level-badge" id="level-display">Level 1</div>
-            <div class="progress-bar">
-                <div id="xp-fill" class="progress-fill">0/100 XP</div>
+            <div class="level-badge" id="level-display">LVL 1</div>
+            <div class="xp-bar-container">
+                <div id="xp-fill" class="xp-bar-fill"></div>
             </div>
-        </div>
+        </header>
 
-        <nav class="tab-nav">
-            <button onclick="switchTab('physical')" class="tab-btn active">Physical</button>
-            <button onclick="switchTab('mental')" class="tab-btn">Mental</button>
-            <button onclick="switchTab('spiritual')" class="tab-btn">Spiritual</button>
-            <button onclick="switchTab('blights')" class="tab-btn" style="color: #ff4d4d;">⚠️ Blights</button>
-            <button onclick="switchTab('stats')" class="tab-btn">Stats</button>
+        <nav class="main-nav">
+            <button class="nav-btn active" onclick="switchTab('physical')">PHY</button>
+            <button class="nav-btn" onclick="switchTab('mental')">MEN</button>
+            <button class="nav-btn" onclick="switchTab('spiritual')">SPI</button>
+            <button class="nav-btn blight-trigger" onclick="switchTab('blights')">☣</button>
+            <button class="nav-btn" onclick="switchTab('stats')">📜</button>
         </nav>
 
-        <div class="stats-grid" style="display:flex; gap:10px; margin-bottom:20px;">
-            <div class="section" style="flex:1; text-align:center;">
-                <div class="stat-value" id="stat-points" style="font-size:1.5rem; color:var(--primary);">0</div>
-                <div style="font-size:0.8rem;">Total XP</div>
-            </div>
-            <div class="section" style="flex:1; text-align:center;">
-                <div class="stat-value" id="stat-lvl" style="font-size:1.5rem; color:var(--accent);">1</div>
-                <div style="font-size:0.8rem;">Hero Rank</div>
-            </div>
-        </div>
+        <main id="quest-area">
+            <h2 id="view-title">PHYSICAL</h2>
+            <div id="habit-list" class="habits-grid"></div>
 
-        <main id="tab-container">
-            <div id="quest-section" class="section">
-                <h2 id="tab-title">📜 Today's Quests</h2>
-                <div id="habit-list" class="habits-grid"></div>
-            </div>
-
-            <div id="stats-section" class="section hidden">
-                <h2>📊 Progress Distribution</h2>
-                <div style="height: 300px;"><canvas id="xpChart"></canvas></div>
+            <div id="action-panel" class="glass">
+                <input type="text" id="new-name" placeholder="New Quest Name...">
+                <input type="number" id="new-xp" placeholder="XP">
+                <button onclick="addNewQuest()" class="btn-plus">+</button>
             </div>
         </main>
+
+        <div id="stats-area" class="hidden">
+            <div class="chart-box glass"><canvas id="xpChart"></canvas></div>
+            <div class="leaderboard glass">
+                <h3>GLOBAL RANKINGS</h3>
+                <div id="scoreboard-list"></div>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="script.js"></script>
