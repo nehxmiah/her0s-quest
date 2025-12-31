@@ -2,11 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hero's Quest: Redemption</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;700;900&family=Playfair+Display:ital@0;1&family=Space+Grotesk:wght@700&family=Syne:wght@800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Hero's Quest</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Space+Grotesk:wght@700&family=Playfair+Display&family=Bebas+Neue&family=Syne:wght@800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cal-heatmap@4/cal-heatmap.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body data-theme="login">
@@ -14,51 +17,41 @@
     <div id="customCursor"></div>
 
     <div id="login-screen" class="container">
-        <h1 class="hero-title">HERO'S QUEST</h1>
-        <div class="login-box glass">
-            <button id="google-login-btn" class="btn-primary">START REDEMPTION</button>
-        </div>
-        <footer class="footer">MADE BY BEINGS</footer>
+        <h1>HERO'S QUEST</h1>
+        <button id="google-login-btn" class="btn-primary">START REDEMPTION</button>
     </div>
 
     <div id="app-screen" class="container hidden">
-        <header class="header glass">
-            <div class="user-row">
-                <span id="user-name">HERO</span>
-                <button id="logout-btn" class="btn-text">LOGOUT</button>
-            </div>
-            <div class="level-badge" id="level-display">LVL 1</div>
-            <div class="xp-bar-container">
-                <div id="xp-fill" class="xp-bar-fill"></div>
-            </div>
+        <header class="glass">
+            <div><span id="user-name">HERO</span> <button id="logout-btn" class="btn-text">LOGOUT</button></div>
+            <div id="level-display">LVL 1</div>
+            <div class="xp-bar"><div id="xp-fill"></div><span id="xp-text">0 / 100 XP</span></div>
         </header>
 
         <nav class="main-nav">
-            <button class="nav-btn active" onclick="switchTab('physical')">PHY</button>
-            <button class="nav-btn" onclick="switchTab('mental')">MEN</button>
-            <button class="nav-btn" onclick="switchTab('spiritual')">SPI</button>
-            <button class="nav-btn blight-trigger" onclick="switchTab('blights')">☣</button>
-            <button class="nav-btn" onclick="switchTab('stats')">📜</button>
+            <button onclick="switchTab('physical')">PHY</button>
+            <button onclick="switchTab('mental')">MEN</button>
+            <button onclick="switchTab('spiritual')">SPI</button>
+            <button onclick="switchTab('blights')">☣</button>
+            <button onclick="switchTab('stats')">📜</button>
         </nav>
 
         <main id="quest-area">
             <h2 id="view-title">PHYSICAL</h2>
-            <div id="habit-list" class="habits-grid"></div>
-
+            <div id="habit-list"></div>
             <div id="action-panel" class="glass">
-                <input type="text" id="new-name" placeholder="New Quest Name...">
-                <input type="number" id="new-xp" placeholder="XP">
+                <input id="new-name" placeholder="Quest name...">
+                <input id="new-xp" type="number" placeholder="XP">
                 <button onclick="addNewQuest()" class="btn-plus">+</button>
             </div>
         </main>
 
-        <div id="stats-area" class="hidden">
-            <div class="chart-box glass"><canvas id="xpChart"></canvas></div>
-            <div class="leaderboard glass">
-                <h3>GLOBAL RANKINGS</h3>
-                <div id="scoreboard-list"></div>
-            </div>
-        </div>
+        <section id="stats-area" class="glass hidden">
+            <h3>Last 7 Days</h3><canvas id="xpChart"></canvas>
+            <h3>Yearly Heatmap</h3><div id="cal-heatmap"></div>
+            <div id="streak-info">Streak: 0 days 🔥</div>
+            <h3>Leaderboard</h3><div id="scoreboard-list"></div>
+        </section>
     </div>
 
     <script type="module" src="script.js"></script>
