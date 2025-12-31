@@ -165,7 +165,9 @@ const themeColors = {
   physical: [[0, 0.95, 1], [0, 0.05, 0.1]],
   mental: [[0.6, 1, 0], [0.1, 0.1, 0]],
   spiritual: [[0.83, 0.68, 0.21], [0.1, 0, 0.1]],
-  blights: [[1, 0.1, 0.1], [0.05, 0, 0]]
+  blights: [[1, 0.1, 0.1], [0.05, 0, 0]],
+  stats: [[0.5, 0.3, 0.9], [0.1, 0.05, 0.15]],
+  shop: [[1, 0.65, 0], [0.15, 0.1, 0]]
 };
 
 // ============================================
@@ -612,6 +614,11 @@ function render() {
 // ============================================
 
 function renderStats() {
+  // Update stat cards
+  document.getElementById('total-xp-stat').textContent = state.totalXp.toLocaleString();
+  document.getElementById('level-stat').textContent = state.level;
+  document.getElementById('gold-stat').textContent = state.gold.toLocaleString();
+  
   renderXPChart();
   renderHeatmap();
   renderStreak();
@@ -752,6 +759,7 @@ function renderHeatmap() {
 
 function renderStreak() {
   const streakEl = document.getElementById('streak-info');
+  const streakStatEl = document.getElementById('streak-stat');
   if (!streakEl) return;
 
   let streak = 0;
@@ -775,7 +783,8 @@ function renderStreak() {
     }
   }
 
-  streakEl.textContent = `Streak: ${streak} day${streak !== 1 ? 's' : ''} 🔥`;
+  streakEl.textContent = `${streak} day${streak !== 1 ? 's' : ''} strong! Keep it going! 🔥`;
+  if (streakStatEl) streakStatEl.textContent = streak;
 }
 
 function renderBadges() {
