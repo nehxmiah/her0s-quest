@@ -16,7 +16,141 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
+  <!-- Make sure your CSS file is named exactly "styles.css" or update this path -->
   <link rel="stylesheet" href="styles.css">
+  
+  <style>
+    /* Inline critical CSS to ensure login screen shows immediately */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: #000;
+      color: #fff;
+      overflow-x: hidden;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    #webGLApp {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+    
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      z-index: 10;
+    }
+    
+    .login-card {
+      max-width: 450px;
+      width: 100%;
+      padding: 48px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    .login-title {
+      font-family: 'Righteous', cursive;
+      font-size: 3.5rem;
+      letter-spacing: 4px;
+      background: linear-gradient(135deg, #00f2ff, #fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 16px;
+    }
+    
+    .login-subtitle {
+      font-size: 1.1rem;
+      opacity: 0.8;
+      margin-bottom: 32px;
+    }
+    
+    .btn-primary {
+      background: #00f2ff;
+      color: #000;
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px #00f2ff;
+    }
+    
+    .spinner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+    
+    .spinner-ring {
+      width: 64px;
+      height: 64px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #00f2ff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .error-message {
+      background: rgba(255, 50, 50, 0.2);
+      border: 1px solid rgba(255, 50, 50, 0.5);
+      color: #ff6b6b;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 16px;
+    }
+    
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+  </style>
 </head>
 <body data-theme="physical">
   <!-- WebGL Background -->
@@ -29,8 +163,8 @@
   </div>
 
   <!-- Login Screen -->
-  <div id="login-screen" class="login-screen">
-    <div class="login-card glass">
+  <div id="login-screen">
+    <div class="login-card">
       <h1 class="login-title">HERO'S QUEST</h1>
       <p class="login-subtitle">Transform your life, one quest at a time</p>
       <button id="google-login-btn" class="btn-primary">
@@ -41,6 +175,208 @@
   </div>
 
   <!-- Main App -->
+  <div id="app-screen" class="app-container hidden" role="main">
+    <!-- Sidebar -->
+    <aside class="sidebar glass" id="sidebar">
+      <!-- Mobile Toggle -->
+      <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+        <i class="fas fa-bars"></i>
+      </button>
+
+      <!-- User Info -->
+      <div class="user-section">
+        <div class="user-avatar" id="avatar">🦸‍♂️</div>
+        <h2 class="user-name" id="user-name">HERO</h2>
+        <div class="level-badge" id="level-display">LVL 1</div>
+      </div>
+
+      <!-- XP Progress -->
+      <div class="xp-section">
+        <div class="xp-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+          <div class="xp-fill" id="xp-fill"></div>
+        </div>
+        <div class="xp-text" id="xp-text">0 / 100 XP</div>
+      </div>
+
+      <!-- Gold Display -->
+      <div class="gold-display">
+        <i class="fas fa-coins"></i>
+        <span id="gold">0</span>
+        <span class="gold-label">Gold</span>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="sidebar-nav" role="navigation" aria-label="Main navigation">
+        <button class="nav-btn active" data-tab="physical">
+          <i class="fas fa-dumbbell"></i>
+          <span>Physical</span>
+        </button>
+        <button class="nav-btn" data-tab="mental">
+          <i class="fas fa-brain"></i>
+          <span>Mental</span>
+        </button>
+        <button class="nav-btn" data-tab="spiritual">
+          <i class="fas fa-cross"></i>
+          <span>Spiritual</span>
+        </button>
+        <button class="nav-btn" data-tab="blights">
+          <i class="fas fa-biohazard"></i>
+          <span>Blights</span>
+        </button>
+        <button class="nav-btn" data-tab="stats">
+          <i class="fas fa-chart-line"></i>
+          <span>Statistics</span>
+        </button>
+        <button class="nav-btn" data-tab="shop">
+          <i class="fas fa-store"></i>
+          <span>Shop</span>
+        </button>
+      </nav>
+
+      <!-- Logout Button -->
+      <button class="btn-logout" id="logout-btn">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Logout</span>
+      </button>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Header -->
+      <header class="content-header glass">
+        <div class="header-top">
+          <h1 class="page-title" id="view-title">PHYSICAL QUESTS</h1>
+          <div class="date-display" id="current-date"></div>
+        </div>
+      </header>
+
+      <!-- Quest Area -->
+      <section id="quest-area" class="content-section">
+        <!-- Motivational Quote -->
+        <div class="quote-card glass" id="motivational-quote">
+          <div class="quote-skeleton"></div>
+        </div>
+
+        <!-- Quest List -->
+        <div class="quest-list-container glass">
+          <div class="quest-list-header">
+            <h2>Active Quests</h2>
+            <button class="btn-toggle-add" id="toggle-add-quest" aria-label="Toggle add quest form">
+              <i class="fas fa-plus"></i>
+            </button>
+          </div>
+
+          <!-- Add Quest Form (Hidden by default) -->
+          <div class="add-quest-form hidden" id="add-quest-form">
+            <div class="form-group">
+              <input 
+                type="text" 
+                id="new-name" 
+                placeholder="Quest name..." 
+                maxlength="50"
+                aria-label="Quest name"
+              >
+            </div>
+            <div class="form-row">
+              <input 
+                type="number" 
+                id="new-xp" 
+                placeholder="XP" 
+                min="-100" 
+                max="500"
+                aria-label="XP value"
+              >
+              <label class="checkbox-label">
+                <input type="checkbox" id="new-repeat">
+                <span>Daily Quest</span>
+              </label>
+              <button class="btn-primary btn-add" id="add-quest-btn">
+                <i class="fas fa-check"></i> Add
+              </button>
+            </div>
+          </div>
+
+          <!-- Quest Items -->
+          <div class="quest-list" id="habit-list" role="list"></div>
+        </div>
+      </section>
+
+      <!-- Stats Area -->
+      <section id="stats-area" class="content-section hidden">
+        <div class="stats-grid">
+          <!-- XP Chart -->
+          <div class="stat-card glass">
+            <h3>Last 7 Days Progress</h3>
+            <div class="chart-container">
+              <canvas id="xpChart" aria-label="XP progress chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Streak Info -->
+          <div class="stat-card glass streak-card">
+            <i class="fas fa-fire"></i>
+            <div class="streak-info" id="streak-info">
+              <div class="streak-number">0</div>
+              <div class="streak-label">Day Streak</div>
+            </div>
+          </div>
+
+          <!-- Badges -->
+          <div class="stat-card glass">
+            <h3>Badges Earned</h3>
+            <div class="badges-grid" id="badges-list" role="list"></div>
+          </div>
+
+          <!-- Leaderboard -->
+          <div class="stat-card glass">
+            <h3>Leaderboard</h3>
+            <div class="leaderboard-list" id="scoreboard-list" role="list"></div>
+          </div>
+        </div>
+
+        <button class="btn-primary btn-report" id="weekly-report">
+          <i class="fas fa-file-alt"></i> Generate Weekly Report
+        </button>
+      </section>
+
+      <!-- Shop Area -->
+      <section id="shop-area" class="content-section hidden">
+        <div class="shop-grid" id="shop-items" role="list"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Rating Modal -->
+  <div id="rating-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content glass">
+      <h3 class="modal-title" id="modal-quest-name">Rate Quest</h3>
+      <p class="modal-description">How well did you complete this quest?</p>
+      
+      <div class="rating-stars" role="radiogroup" aria-label="Quest rating">
+        <i class="far fa-star" data-value="1"></i>
+        <i class="far fa-star" data-value="2"></i>
+        <i class="far fa-star" data-value="3"></i>
+        <i class="far fa-star" data-value="4"></i>
+        <i class="far fa-star" data-value="5"></i>
+      </div>
+
+      <div class="rating-moods" role="radiogroup" aria-label="Current mood">
+        <span data-mood="happy">😊</span>
+        <span data-mood="neutral">😐</span>
+        <span data-mood="sad">😔</span>
+      </div>
+
+      <div class="modal-buttons">
+        <button class="btn-secondary" id="cancel-rating">Cancel</button>
+        <button class="btn-primary" id="confirm-rating">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
   <div id="app-screen" class="app-container hidden">
     <!-- Sidebar -->
     <aside class="sidebar glass" id="sidebar">
