@@ -1,25 +1,10 @@
-// ========================================
-// FIREBASE IMPORTS & CONFIGURATION
-// ========================================
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"; // Update to latest minor if needed
-import { 
-  getAuth, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  onAuthStateChanged, 
-  signOut 
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { 
-  getFirestore, 
-  doc, 
-  setDoc, 
-  getDoc, 
-  collection, 
-  query, 
-  orderBy, 
-  limit, 
-  onSnapshot 
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+/* ============================================
+   FIREBASE CONFIGURATION
+   ============================================ */
 
 const firebaseConfig = {
   apiKey: "AIzaSyBDTTyEWFBam2EEWK4X2VV5E-wUJx10V38",
@@ -35,9 +20,10 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// ========================================
-// STATE MANAGEMENT
-// ========================================
+/* ============================================
+   APPLICATION STATE
+   ============================================ */
+
 let state = {
   xp: 0,
   level: 1,
@@ -45,11 +31,11 @@ let state = {
   gold: 0,
   avatar: '🦸‍♂️',
   badges: [],
-  quests: { 
-    physical: [], 
-    mental: [], 
-    spiritual: [], 
-    blights: [] 
+  quests: {
+    physical: [],
+    mental: [],
+    spiritual: [],
+    blights: []
   },
   history: {}
 };
@@ -57,502 +43,720 @@ let state = {
 let user = null;
 let currentTab = 'physical';
 let chart = null;
-let pendingQuest = null;
+let pendingTask = null;
 let selectedMood = null;
 let isSyncing = false;
-let syncTimeout = null;
 
-// ========================================
-// DOM UTILITIES
-// ========================================
-const $ = id => document.getElementById(id);
-const $$ = selector => document.querySelectorAll(selector);
+/* ============================================
+   UTILITY FUNCTIONS
+   ============================================ */
 
-const showError = message => {
-  const errorEl = $('error');
-  if (!errorEl) return;
-  
-  errorEl.textContent = message;
-  errorEl.classList.remove('hidden');
-  setTimeout(() => errorEl.classList.add('hidden'), 4000);
-};
+const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => document.querySelectorAll(selector);
 
-const showLoading = show => {
-  $('loading')?.classList.toggle('hidden', !show);
-};
-
-const sanitize = str => {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-};
-
-const validateXP = xp => {
-  const number = parseInt(xp);
-  return !isNaN(number) && number >= -100 && number <= 500 ? number : null;
-};
-
-const vibrate = pattern => navigator.vibrate?.(pattern);
-
-const triggerConfetti = () => {
-  window.confetti?.({
-    particleCount: 100,
-    spread: 70,
-    origin: { y: 0.6 }
-  });
-};
-
-// ========================================
-// ANIMATED BACKGROUND
-// ========================================
-class AnimatedBackground {
-  constructor() {
-    const canvas = $('bg');
-    if (!canvas) return;
-    
-    this.ctx = canvas.getContext('2d');
-    this.width = canvas.width = window.innerWidth;
-    this.height = canvas.height = window.innerHeight;
-    this.time = 0;
-    this.color = [0, 242, 255]; // Cyan default
-    this.particles = [];
-    
-    // Create particles
-    for (let i = 0; i < 50; i++) {
-      this.particles.push({
-        x: Math.random() * this.width,
-        y: Math.random() * this.height,
-        size: Math.random() * 3 + 1,
-        speedX: (Math.random() - 0.5) * 0.5,
-        speedY: (Math.random() - 0.5) * 0.5
-      });
-    }
-    
-    this.animate();
-    
-    window.addEventListener('resize', () => {
-      this.width = canvas.width = window.innerWidth;
-      this.height = canvas.height = window.innerHeight;
-    });
-  }
-  
-  animate() {
-    requestAnimationFrame(() => this.animate());
-    if (!this.ctx) return;
-    
-    this.time += 0.01;
-    
-    // Create animated gradient
-    const gradient = this.ctx.createLinearGradient(
-      0, 
-      0, 
-      this.width * Math.cos(this.time * 0.5), 
-      this.height * Math.sin(this.time * 0.5)
-    );
-    const [red, green, blue] = this.color;
-    gradient.addColorStop(0, `rgb(${red}, ${green}, ${blue})`);
-    gradient.addColorStop(1, 'rgb(0, 0, 0)');
-    
-    this.ctx.fillStyle = gradient;
-    this.ctx.fillRect(0, 0, this.width, this.height);
-    
-    // Draw and update particles
-    this.particles.forEach(particle => {
-      // Update position
-      particle.x += particle.speedX;
-      particle.y += particle.speedY;
-      
-      // Wrap around screen
-      if (particle.x < 0) particle.x = this.width;
-      if (particle.x > this.width) particle.x = 0;
-      if (particle.y < 0) particle.y = this.height;
-      if (particle.y > this.height) particle.y = 0;
-      
-      // Draw particle
-      this.ctx.fillStyle = `rgba(${red}, ${green}, ${blue}, ${0.3 + Math.sin(this.time * 2 + particle.x) * 0.3})`;
-      this.ctx.beginPath();
-      this.ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-      this.ctx.fill();
-    });
-  }
-  
-  setColor(colorArray) {
-    this.color = colorArray;
+function showError(message, containerId = 'login-error') {
+  const errorEl = $(containerId);
+  if (errorEl) {
+    errorEl.textContent = message;
+    errorEl.classList.remove('hidden');
+    setTimeout(() => errorEl.classList.add('hidden'), 5000);
   }
 }
 
-const background = new AnimatedBackground();
+function showLoading(show = true) {
+  $('#loading-spinner')?.classList.toggle('hidden', !show);
+}
 
-// Theme colors for each tab
-const THEME_COLORS = {
-  physical: [0, 242, 255],    // Cyan
-  mental: [133, 153, 0],      // Olive
-  spiritual: [212, 175, 55],  // Gold
-  blights: [255, 51, 102],    // Red
-  stats: [139, 92, 246],      // Purple
-  shop: [255, 165, 0]         // Orange
+function sanitizeInput(input) {
+  const div = document.createElement('div');
+  div.textContent = input;
+  return div.innerHTML;
+}
+
+function validateXP(xp) {
+  const num = parseInt(xp);
+  return !isNaN(num) && num >= -100 && num <= 500 ? num : null;
+}
+
+function getTodayString() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/* ============================================
+   LIQUID BACKGROUND ENGINE
+   ============================================ */
+
+class LiquidEngine {
+  constructor() {
+    try {
+      const canvas = $('#webGLApp');
+      if (!canvas) throw new Error('Canvas not found');
+      
+      this.renderer = new THREE.WebGLRenderer({ 
+        canvas, 
+        antialias: true,
+        alpha: true 
+      });
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      
+      this.scene = new THREE.Scene();
+      this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+      
+      this.uniforms = {
+        uTime: { value: 0 },
+        uColor1: { value: new THREE.Vector3(0, 0.95, 1) },
+        uColor2: { value: new THREE.Vector3(0, 0.05, 0.1) }
+      };
+      
+      this.init();
+      this.handleResize();
+    } catch (error) {
+      console.error('WebGL initialization failed:', error);
+    }
+  }
+
+  init() {
+    const vertexShader = `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = vec4(position, 1.0);
+      }
+    `;
+
+    const fragmentShader = `
+      uniform float uTime;
+      uniform vec3 uColor1;
+      uniform vec3 uColor2;
+      varying vec2 vUv;
+      
+      void main() {
+        vec2 p = vUv * 2.0 - 1.0;
+        float t = uTime * 0.5;
+        float noise = sin(p.x * 3.0 + t) * cos(p.y * 2.0 + t) + sin(t * 0.5);
+        vec3 color = mix(uColor1, uColor2, noise * 0.5 + 0.5);
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `;
+
+    const material = new THREE.ShaderMaterial({
+      uniforms: this.uniforms,
+      vertexShader,
+      fragmentShader
+    });
+
+    const geometry = new THREE.PlaneGeometry(2, 2);
+    this.scene.add(new THREE.Mesh(geometry, material));
+    
+    this.animate();
+  }
+
+  animate() {
+    requestAnimationFrame(() => this.animate());
+    this.uniforms.uTime.value += 0.01;
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  handleResize() {
+    window.addEventListener('resize', () => {
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  }
+
+  updateTheme(c1, c2) {
+    this.uniforms.uColor1.value.set(...c1);
+    this.uniforms.uColor2.value.set(...c2);
+  }
+}
+
+let engine;
+try {
+  engine = new LiquidEngine();
+} catch (error) {
+  console.error('Failed to initialize liquid engine:', error);
+}
+
+const themeColors = {
+  physical: [[0, 0.95, 1], [0, 0.05, 0.1]],
+  mental: [[0.6, 1, 0], [0.1, 0.1, 0]],
+  spiritual: [[0.83, 0.68, 0.21], [0.1, 0, 0.1]],
+  blights: [[1, 0.1, 0.1], [0.05, 0, 0]]
 };
 
-// ========================================
-// TAB SWITCHING
-// ========================================
-const switchTab = tabName => {
-  currentTab = tabName;
-  document.body.setAttribute('data-theme', tabName);
-  
-  // Update active nav button
-  $$('.nav button').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.tab === tabName);
-  });
-  
-  // Update background color
-  if (background) {
-    background.setColor(THEME_COLORS[tabName] || [0, 242, 255]);
+/* ============================================
+   EFFECTS & FEEDBACK
+   ============================================ */
+
+function vibrate(pattern) {
+  if ('vibrate' in navigator) {
+    try {
+      navigator.vibrate(pattern);
+    } catch (e) {
+      console.warn('Vibration failed:', e);
+    }
   }
+}
+
+function vibrateSuccess() {
+  vibrate([100, 50, 100]);
+}
+
+function vibrateLevelUp() {
+  vibrate([200, 100, 300, 100, 500]);
+}
+
+function triggerConfetti() {
+  if (typeof confetti === 'function') {
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#00f2ff', '#d4af37', '#ff3366', '#859900']
+    });
+  }
+}
+
+function playSound(url) {
+  try {
+    const audio = new Audio(url);
+    audio.volume = 0.3;
+    audio.play().catch(e => console.warn('Audio play failed:', e));
+  } catch (e) {
+    console.warn('Audio creation failed:', e);
+  }
+}
+
+function playLevelUpSound() {
+  playSound('https://www.orangefreesounds.com/wp-content/uploads/2016/09/Level-up-sound-effect.mp3');
+}
+
+function playSuccessSound() {
+  playSound('https://www.orangefreesounds.com/wp-content/uploads/2014/08/Success-sound-effect.mp3');
+}
+
+/* ============================================
+   NAVIGATION & UI
+   ============================================ */
+
+function switchTab(tab) {
+  if (!['physical', 'mental', 'spiritual', 'blights', 'stats', 'shop'].includes(tab)) {
+    console.error('Invalid tab:', tab);
+    return;
+  }
+
+  currentTab = tab;
+  document.body.setAttribute('data-theme', tab);
   
-  // Update page title
-  $('title').textContent = tabName.toUpperCase();
+  // Update nav buttons
+  $$('.nav-btn').forEach(btn => {
+    const isActive = btn.dataset.tab === tab;
+    btn.classList.toggle('active', isActive);
+  });
+
+  // Update theme
+  if (engine && themeColors[tab]) {
+    engine.updateTheme(...themeColors[tab]);
+  }
+
+  // Update title
+  const titles = {
+    physical: 'PHYSICAL QUESTS',
+    mental: 'MENTAL QUESTS',
+    spiritual: 'SPIRITUAL QUESTS',
+    blights: 'BLIGHTS TO AVOID',
+    stats: 'STATISTICS',
+    shop: 'HERO\'S SHOP'
+  };
   
-  // Show/hide appropriate sections
-  $('quests')?.classList.toggle('hidden', tabName === 'stats' || tabName === 'shop');
-  $('stats')?.classList.toggle('hidden', tabName !== 'stats');
-  $('shop')?.classList.toggle('hidden', tabName !== 'shop');
-  
-  // Load content for current tab
-  if (tabName !== 'stats' && tabName !== 'shop') {
+  const titleEl = $('#view-title');
+  if (titleEl) titleEl.textContent = titles[tab];
+
+  // Toggle sections
+  const questArea = $('#quest-area');
+  const statsArea = $('#stats-area');
+  const shopArea = $('#shop-area');
+
+  if (questArea) questArea.classList.toggle('hidden', tab === 'stats' || tab === 'shop');
+  if (statsArea) statsArea.classList.toggle('hidden', tab !== 'stats');
+  if (shopArea) shopArea.classList.toggle('hidden', tab !== 'shop');
+
+  updateHeader();
+  renderQuests();
+
+  // Load content based on tab
+  if (tab !== 'stats' && tab !== 'shop') {
     loadQuote();
   }
-  if (tabName === 'stats') {
-    renderStats();
-  }
-  if (tabName === 'shop') {
-    renderShop();
-  }
-  
-  updateHeader();
-  renderQuestList();
-};
+  if (tab === 'stats') renderStats();
+  if (tab === 'shop') renderShop();
 
-// Initialize navigation
-$$('.nav button').forEach(button => {
-  button.addEventListener('click', () => {
-    switchTab(button.dataset.tab);
-  });
+  // Close sidebar on mobile after navigation
+  if (window.innerWidth <= 768) {
+    $('#sidebar')?.classList.remove('active');
+  }
+}
+
+// Setup nav buttons
+$$('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
 });
 
-// ========================================
-// HEADER UPDATES
-// ========================================
-const updateHeader = () => {
-  $('avatar').textContent = state.avatar;
-  $('username').textContent = user?.displayName?.split(' ')[0] || 'HERO';
-  $('level').textContent = `LVL ${state.level}`;
-  $('xp-fill').style.width = `${state.xp}%`;
-  $('xp-text').textContent = `${state.xp} / 100 XP`;
-  $('gold').textContent = state.gold;
-};
+// Setup sidebar toggle
+$('#sidebar-toggle')?.addEventListener('click', () => {
+  $('#sidebar')?.classList.toggle('active');
+});
 
-// ========================================
-// MOTIVATIONAL QUOTES
-// ========================================
-const QUOTES = {
-  physical: [
-    { quote: "The body achieves what the mind believes.", author: "Napoleon Hill" },
-    { quote: "Take care of your body. It's the only place you have to live.", author: "Jim Rohn" }
-  ],
-  mental: [
-    { quote: "Reading is to the mind what exercise is to the body.", author: "Joseph Addison" },
-    { quote: "The mind is everything. What you think you become.", author: "Buddha" }
-  ],
-  spiritual: [
-    { quote: "Peace comes from within. Do not seek it without.", author: "Buddha" },
-    { quote: "Be still and know.", author: "Psalm 46:10" }
-  ],
-  blights: [
-    { quote: "Fall seven times, stand up eight.", author: "Japanese Proverb" },
-    { quote: "Rock bottom became the solid foundation on which I rebuilt my life.", author: "J.K. Rowling" }
-  ]
-};
+// Close sidebar when clicking outside on mobile
+document.addEventListener('click', (e) => {
+  const sidebar = $('#sidebar');
+  const toggle = $('#sidebar-toggle');
+  
+  if (window.innerWidth <= 768 && 
+      sidebar?.classList.contains('active') &&
+      !sidebar.contains(e.target) &&
+      !toggle?.contains(e.target)) {
+    sidebar.classList.remove('active');
+  }
+});
 
-const loadQuote = () => {
-  const quoteEl = $('quote');
-  if (!quoteEl) return;
-  
-  const quoteList = QUOTES[currentTab] || QUOTES.physical;
-  const randomQuote = quoteList[Math.floor(Math.random() * quoteList.length)];
-  
-  quoteEl.innerHTML = `
-    <p>"${randomQuote.quote}"</p>
-    <small>— ${randomQuote.author}</small>
-  `;
-};
+/* ============================================
+   HEADER UPDATES
+   ============================================ */
 
-// ========================================
-// ADD NEW QUEST
-// ========================================
-$('add-btn')?.addEventListener('click', () => {
-  const questName = $('quest-name').value.trim();
-  const questXP = validateXP($('quest-xp').value);
-  const isRepeating = $('quest-repeat').checked;
+function updateHeader() {
+  const dateEl = $('#current-date');
+  const goldEl = $('#gold');
+  const avatarEl = $('#avatar');
+  const levelEl = $('#level-display');
+  const xpFillEl = $('#xp-fill');
+  const xpTextEl = $('#xp-text');
+  const xpBar = $('.xp-bar');
+
+  if (dateEl) {
+    dateEl.textContent = new Date().toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  }
+
+  if (goldEl) goldEl.textContent = state.gold;
+  if (avatarEl) avatarEl.textContent = state.avatar;
+  if (levelEl) levelEl.textContent = `LVL ${state.level}`;
+
+  if (xpFillEl) xpFillEl.style.width = `${state.xp}%`;
+  if (xpTextEl) xpTextEl.textContent = `${state.xp} / 100 XP`;
+  if (xpBar) {
+    xpBar.setAttribute('aria-valuenow', state.xp);
+  }
+}
+
+/* ============================================
+   MOTIVATIONAL QUOTE
+   ============================================ */
+
+async function loadQuote() {
+  const box = $('#motivational-quote');
+  if (!box) return;
+
+  box.innerHTML = '<div class="quote-skeleton"></div>';
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const res = await fetch('https://zenquotes.io/api/random', {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) throw new Error('Quote fetch failed');
+
+    const [quote] = await res.json();
+    box.innerHTML = `<p>"${sanitizeInput(quote.q)}"</p><small>— ${sanitizeInput(quote.a)}</small>`;
+  } catch (error) {
+    console.warn('Failed to load quote:', error);
+    box.innerHTML = `<p>"Keep pushing forward."</p><small>— Your Future Self</small>`;
+  }
+}
+
+/* ============================================
+   TOGGLE ADD QUEST FORM
+   ============================================ */
+
+$('#toggle-add-quest')?.addEventListener('click', function() {
+  const form = $('#add-quest-form');
+  const isHidden = form?.classList.contains('hidden');
   
-  // Validation
-  if (!questName) {
-    showError('Quest name required');
+  form?.classList.toggle('hidden');
+  this.classList.toggle('active');
+  
+  if (isHidden) {
+    // Focus on quest name input when opening
+    $('#new-name')?.focus();
+  }
+});
+
+/* ============================================
+   QUEST MANAGEMENT
+   ============================================ */
+
+function addNewQuest() {
+  const nameInput = $('#new-name');
+  const xpInput = $('#new-xp');
+  const repeatInput = $('#new-repeat');
+
+  if (!nameInput || !xpInput || !repeatInput) return;
+
+  const name = nameInput.value.trim();
+  const xp = validateXP(xpInput.value);
+  const repeat = repeatInput.checked;
+
+  if (!name) {
+    showError('Quest name is required');
+    nameInput.focus();
     return;
   }
-  
-  if (questXP === null) {
+
+  if (xp === null) {
     showError('XP must be between -100 and 500');
+    xpInput.focus();
     return;
   }
-  
-  if (state.quests[currentTab].some(quest => quest.name === questName)) {
-    showError('Quest already exists');
+
+  if (name.length > 50) {
+    showError('Quest name is too long (max 50 characters)');
     return;
   }
-  
-  // Add quest to state
-  state.quests[currentTab].push({ 
-    name: questName, 
-    xp: questXP, 
-    repeat: isRepeating 
-  });
- 
-  // Clear form
-  $('quest-name').value = '';
-  $('quest-xp').value = '';
-  $('quest-repeat').checked = false;
-  // Add this line at the end of your addNewQuest() function
-toggleAddPanel();
-  renderQuestList();
-  syncDataToFirebase();
+
+  // Check for duplicates
+  if (state.quests[currentTab].some(q => q.name === name)) {
+    showError('A quest with this name already exists');
+    return;
+  }
+
+  state.quests[currentTab].push({ name, xp, repeat });
+
+  // Clear inputs
+  nameInput.value = '';
+  xpInput.value = '';
+  repeatInput.checked = false;
+
+  renderQuests();
+  syncData();
+
+  // Close form and show success feedback
+  $('#add-quest-form')?.classList.add('hidden');
+  $('#toggle-add-quest')?.classList.remove('active');
+}
+
+// Setup add quest button
+$('#add-quest-btn')?.addEventListener('click', addNewQuest);
+
+// Allow Enter key to add quest
+$('#new-name')?.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    addNewQuest();
+  }
 });
 
-// ========================================
-// COMPLETE QUEST (SHOW MODAL)
-// ========================================
-const completeQuest = (questName, questXP) => {
-  const today = new Date().toISOString().slice(0, 10);
+/* ============================================
+   TASK COMPLETION & RATING
+   ============================================ */
+
+function toggleTask(name, baseXp) {
+  const today = getTodayString();
   
-  // Check if already completed today
-  if (state.history[today]?.[questName]?.done) {
-    alert('Already completed today!');
+  if (state.history[today]?.[name]?.done) {
+    alert("Already completed today!");
     return;
   }
-  
-  pendingQuest = { name: questName, xp: questXP };
-  
-  // Update modal title
-  $('modal-title').textContent = `Rate "${sanitize(questName)}"`;
-  
-  // Reset stars
-  $$('.stars i').forEach(star => {
-    star.classList.remove('active', 'fas');
-    star.classList.add('far');
-  });
-  
-  // Reset moods
-  $$('.moods span').forEach(mood => mood.classList.remove('active'));
-  
-  selectedMood = null;
-  setStarRating(5); // Default to 5 stars
-  
-  $('modal')?.classList.remove('hidden');
-};
 
-const setStarRating = value => {
-  $$('.stars i').forEach((star, index) => {
-    const isActive = index < value;
+  pendingTask = { name, baseXp };
+  
+  const modalTitle = $('#modal-quest-name');
+  if (modalTitle) modalTitle.textContent = `Rate "${sanitizeInput(name)}"`;
+
+  // Reset stars
+  $$('.rating-stars i').forEach(s => {
+    s.classList.remove('active', 'fas');
+    s.classList.add('far');
+  });
+
+  // Reset moods
+  $$('.rating-moods span').forEach(m => {
+    m.classList.remove('active');
+  });
+
+  selectedMood = null;
+  setRating(5);
+
+  const modal = $('#rating-modal');
+  if (modal) {
+    modal.classList.add('active');
+    // Focus first star for accessibility
+    modal.querySelector('.rating-stars i')?.focus();
+  }
+}
+
+function setRating(value) {
+  $$('.rating-stars i').forEach((star, i) => {
+    const isActive = i < value;
     star.classList.toggle('active', isActive);
     star.classList.toggle('fas', isActive);
     star.classList.toggle('far', !isActive);
   });
-};
+}
 
 // Star click handlers
-$$('.stars i').forEach(star => {
+$$('.rating-stars i').forEach(star => {
   star.addEventListener('click', () => {
     const value = parseInt(star.dataset.value);
-    if (!isNaN(value)) setStarRating(value);
+    if (!isNaN(value)) setRating(value);
+  });
+
+  // Keyboard support
+  star.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      star.click();
+    }
   });
 });
 
-// Mood click handlers
-$$('.moods span').forEach(moodEl => {
-  moodEl.addEventListener('click', () => {
-    $$('.moods span').forEach(m => m.classList.remove('active'));
-    moodEl.classList.add('active');
-    selectedMood = moodEl.dataset.mood;
+// Mood handlers
+$$('.rating-moods span').forEach(mood => {
+  mood.addEventListener('click', () => {
+    $$('.rating-moods span').forEach(m => m.classList.remove('active'));
+    mood.classList.add('active');
+    selectedMood = mood.dataset.mood;
+  });
+
+  // Keyboard support
+  mood.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      mood.click();
+    }
   });
 });
 
-// ========================================
-// CONFIRM QUEST COMPLETION
-// ========================================
-$('confirm-btn')?.addEventListener('click', async () => {
-  if (!pendingQuest) return;
-  
+// Confirm rating
+$('#confirm-rating')?.addEventListener('click', async () => {
+  if (!pendingTask) return;
+
   try {
-    const starRating = $$('.stars i.active').length || 5;
-    const earnedXP = Math.round(pendingQuest.xp * (starRating / 5));
+    const rating = $$('.rating-stars i.active').length || 5;
+
+    // Calculate streak multiplier
+    let streakDays = 1;
+    let checkDate = new Date();
     
-    const today = new Date().toISOString().slice(0, 10);
-    
+    while (streakDays < 365) {
+      checkDate.setDate(checkDate.getDate() - 1);
+      const dateStr = checkDate.toISOString().slice(0, 10);
+      
+      if (state.history[dateStr]?.[pendingTask.name]?.done) {
+        streakDays++;
+      } else {
+        break;
+      }
+    }
+
+    const multiplier = streakDays >= 7 ? 1.5 : 1;
+    const earned = Math.round(pendingTask.baseXp * (rating / 5) * multiplier);
+
     // Update state
-    state.xp += earnedXP;
-    state.totalXp += earnedXP;
-    state.gold += Math.max(0, Math.floor(earnedXP / 10));
-    const multiplier = 1 / (1 + (state.level * 0.05));
-    const fairEarnedXP = Math.round(earnedXP * multiplier);
-    
-    // Record in history
+    const today = getTodayString();
+    state.xp += earned;
+    state.totalXp += earned;
+    state.gold += Math.max(0, Math.floor(earned / 10));
+
     if (!state.history[today]) state.history[today] = {};
-    state.history[today][pendingQuest.name] = {
+    state.history[today][pendingTask.name] = {
       done: true,
-      rating: starRating,
+      rating,
       mood: selectedMood,
-      xp: earnedXP,
+      xp: earned,
       timestamp: Date.now()
     };
-    
-    vibrate([100, 50, 100]);
-    
-    // Check for level up
+
+    // Effects
+    playSuccessSound();
+    vibrateSuccess();
+
+    // Level up check
     while (state.xp >= 100) {
       state.level++;
       state.xp -= 100;
+      
       triggerConfetti();
-      vibrate([200, 100, 300]);
-      setTimeout(() => alert(`🎉 LEVEL ${state.level}! 🎉`), 200);
+      playLevelUpSound();
+      vibrateLevelUp();
+      
+      setTimeout(() => {
+        alert(`🎉 LEVEL UP! Now Level ${state.level}! 🎉`);
+      }, 300);
     }
-    
+
     closeModal();
-    renderQuestList();
-    await syncDataToFirebase();
-    
+    renderQuests();
+    await syncData();
+
   } catch (error) {
-    console.error('Failed to confirm quest:', error);
-    showError('Failed to save progress');
+    console.error('Error confirming rating:', error);
+    showError('Failed to save quest completion');
   }
 });
 
-const closeModal = () => {
-  $('modal')?.classList.add('hidden');
-  pendingQuest = null;
+function closeModal() {
+  const modal = $('#rating-modal');
+  if (modal) modal.classList.remove('active');
+  pendingTask = null;
   selectedMood = null;
-};
+}
 
-$('cancel-btn')?.addEventListener('click', closeModal);
+$('#cancel-rating')?.addEventListener('click', closeModal);
+
+$('#rating-modal')?.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal-backdrop')) closeModal();
+});
 
 // Close modal on Escape key
-document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && !$('modal')?.classList.contains('hidden')) {
-    closeModal();
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const modal = $('#rating-modal');
+    if (modal && modal.classList.contains('active')) {
+      closeModal();
+    }
   }
 });
 
-// ========================================
-// RENDER QUEST LIST
-// ========================================
-const renderQuestList = () => {
+/* ============================================
+   RENDER QUESTS
+   ============================================ */
+
+function renderQuests() {
   updateHeader();
+
+  const today = getTodayString();
+  const list = $('#habit-list');
   
-  const today = new Date().toISOString().slice(0, 10);
-  const listEl = $('list');
-  if (!listEl) return;
-  
-  listEl.innerHTML = '';
-  
-  const questList = state.quests[currentTab];
-  
-  if (questList.length === 0) {
-    listEl.innerHTML = `
-      <div class="empty">
+  if (!list) return;
+
+  // Reset daily quests from yesterday
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+  state.quests[currentTab].forEach(quest => {
+    if (quest.repeat && 
+        state.history[yesterdayStr]?.[quest.name]?.done && 
+        !state.history[today]?.[quest.name]) {
+      if (!state.history[today]) state.history[today] = {};
+      state.history[today][quest.name] = { done: false };
+    }
+  });
+
+  // Render quest list
+  list.innerHTML = '';
+
+  if (state.quests[currentTab].length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
         <i class="fas fa-scroll fa-3x"></i>
-        <p>No quests yet</p>
+        <p>No quests yet. Add your first quest using the + button above!</p>
       </div>
     `;
     return;
   }
-  
-  questList.forEach(quest => {
-    const isCompleted = state.history[today]?.[quest.name]?.done;
-    const questDiv = document.createElement('div');
-    questDiv.className = `quest-item ${isCompleted ? 'done' : ''}`;
-    
+
+  state.quests[currentTab].forEach(quest => {
+    const done = state.history[today]?.[quest.name]?.done;
+    const questEl = document.createElement('div');
+    questEl.className = `quest-item ${done ? 'completed' : ''}`;
+    questEl.role = 'listitem';
+
     const xpSign = quest.xp > 0 ? '+' : '';
-    const repeatIcon = quest.repeat ? ' 🔄' : '';
-    const buttonText = isCompleted ? '✓' : (quest.xp < 0 ? 'FAIL' : 'GO');
-    
-    questDiv.innerHTML = `
-      <span class="quest-name">${sanitize(quest.name)} (${xpSign}${quest.xp} XP)${repeatIcon}</span>
-      <button class="quest-btn" ${isCompleted ? 'disabled' : ''}>
+    const buttonText = done ? '✓' : (quest.xp < 0 ? 'FAIL' : 'GO');
+
+    questEl.innerHTML = `
+      <div class="quest-info">
+        <div class="quest-name">${sanitizeInput(quest.name)}</div>
+        <div class="quest-details">
+          <span class="quest-xp">${xpSign}${quest.xp} XP</span>
+          ${quest.repeat ? '<span class="quest-repeat">🔄 Daily</span>' : ''}
+        </div>
+      </div>
+      <button 
+        class="btn-quest-action" 
+        onclick="window.toggleTask('${sanitizeInput(quest.name)}', ${quest.xp})" 
+        ${done ? 'disabled' : ''}
+        aria-label="${done ? 'Completed' : 'Complete quest'}"
+      >
         ${buttonText}
       </button>
     `;
-    
-    if (!isCompleted) {
-      questDiv.querySelector('.quest-btn').addEventListener('click', () => {
-        completeQuest(quest.name, quest.xp);
-      });
-    }
-    
-    listEl.appendChild(questDiv);
-  });
-};
 
-// ========================================
-// STATS PAGE
-// ========================================
-const renderStats = () => {
-  $('total-xp').textContent = state.totalXp.toLocaleString();
-  $('level-stat').textContent = state.level;
-  $('gold-stat').textContent = state.gold.toLocaleString();
-  
-  renderProgressChart();
+    list.appendChild(questEl);
+  });
+}
+
+// Make toggleTask globally available
+window.toggleTask = toggleTask;
+
+/* ============================================
+   STATISTICS
+   ============================================ */
+
+function renderStats() {
+  renderXPChart();
   renderStreak();
   renderBadges();
-};
+  setupWeeklyReport();
+}
 
-const renderProgressChart = () => {
-  const canvas = $('chart');
+function renderXPChart() {
+  const canvas = $('#xpChart');
   if (!canvas) return;
-  
+
   const labels = [];
   const data = [];
-  
-  // Get last 7 days of data
+
   for (let i = 6; i >= 0; i--) {
     const date = new Date();
     date.setDate(date.getDate() - i);
-    const dateString = date.toISOString().slice(0, 10);
+    const dateStr = date.toISOString().slice(0, 10);
     
-    labels.push(dateString.slice(5)); // MM-DD format
+    labels.push(dateStr.slice(5));
     
-    const dayHistory = state.history[dateString] || {};
+    const dayHistory = state.history[dateStr] || {};
     const dayXP = Object.values(dayHistory).reduce((sum, entry) => {
       return entry.done ? sum + (entry.xp || 0) : sum;
     }, 0);
     
     data.push(dayXP);
   }
-  
-  // Destroy existing chart
+
   if (chart) chart.destroy();
-  
-  // Create new chart
+
   chart = new Chart(canvas, {
     type: 'line',
     data: {
       labels,
       datasets: [{
-        label: 'XP',
+        label: 'XP Earned',
         data,
         borderColor: getComputedStyle(document.documentElement)
-          .getPropertyValue('--accent') || '#00f2ff',
+          .getPropertyValue('--accent').trim() || '#00f2ff',
         backgroundColor: 'rgba(0, 242, 255, 0.1)',
         tension: 0.4,
-        fill: true
+        fill: true,
+        pointRadius: 4,
+        pointHoverRadius: 6
       }]
     },
     options: {
@@ -574,309 +778,319 @@ const renderProgressChart = () => {
       }
     }
   });
-};
+}
 
-const renderStreak = () => {
-  const streakEl = $('streak');
+function renderStreak() {
+  const streakEl = $('#streak-info');
   if (!streakEl) return;
-  
+
   let streak = 0;
-  const currentDate = new Date();
-  const today = currentDate.toISOString().slice(0, 10);
-  
-  // Check if user did anything today
+  let checkDate = new Date();
+
+  // Check today first
+  const today = checkDate.toISOString().slice(0, 10);
   if (Object.keys(state.history[today] || {}).length > 0) {
     streak = 1;
   }
-  
-  // Count consecutive days backwards
-  for (let i = 1; i < 365; i++) {
-    currentDate.setDate(currentDate.getDate() - 1);
-    const dateString = currentDate.toISOString().slice(0, 10);
+
+  // Check previous days
+  while (streak < 365) {
+    checkDate.setDate(checkDate.getDate() - 1);
+    const dateStr = checkDate.toISOString().slice(0, 10);
     
-    if (Object.keys(state.history[dateString] || {}).length > 0) {
+    if (Object.keys(state.history[dateStr] || {}).length > 0) {
       streak++;
     } else {
       break;
     }
   }
-  
-  streakEl.textContent = streak;
-};
 
-const renderBadges = () => {
-  const badgesEl = $('badges');
-  if (!badgesEl) return;
+  streakEl.innerHTML = `
+    <div class="streak-number">${streak}</div>
+    <div class="streak-label">Day${streak !== 1 ? 's' : ''} Streak</div>
+  `;
+}
+
+function renderBadges() {
+  const badgesList = $('#badges-list');
+  if (!badgesList) return;
+
+  const badges = [];
   
-  const earnedBadges = [];
-  
-  // Badge criteria
-  if (state.totalXp >= 500) earnedBadges.push('XP Novice 🅱');
-  if (state.totalXp >= 1000) earnedBadges.push('XP Master 🏆');
-  if (state.level >= 10) earnedBadges.push('Level 10 🦸');
-  
-  // Merge with existing badges (no duplicates)
-  state.badges = [...new Set([...state.badges, ...earnedBadges])];
-  
-  if (state.badges.length === 0) {
-    badgesEl.innerHTML = '<p class="empty">Complete quests to earn badges</p>';
+  if (state.totalXp >= 500) badges.push('XP Novice 🏅');
+  if (state.totalXp >= 1000) badges.push('XP Master 🏆');
+  if (state.totalXp >= 5000) badges.push('Legendary ⭐');
+  if (state.level >= 10) badges.push('Level 10 Hero 🦸');
+  if (state.level >= 25) badges.push('Level 25 Champion 👑');
+
+  state.badges = [...new Set([...state.badges, ...badges])];
+
+  if (badges.length === 0) {
+    badgesList.innerHTML = '<p class="empty-state">Complete quests to earn badges!</p>';
   } else {
-    badgesEl.innerHTML = state.badges
-      .map(badge => `<span class="badge">${sanitize(badge)}</span>`)
+    badgesList.innerHTML = state.badges
+      .map(badge => `<span class="badge" role="listitem">${sanitizeInput(badge)}</span>`)
       .join('');
+  }
+}
+
+function setupWeeklyReport() {
+  const reportBtn = $('#weekly-report');
+  if (!reportBtn) return;
+
+  reportBtn.onclick = () => {
+    let report = '📊 WEEKLY REPORT\n' + '='.repeat(30) + '\n\n';
+    let totalXP = 0;
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().slice(0, 10);
+      
+      const dayXP = Object.values(state.history[dateStr] || {}).reduce((sum, entry) => {
+        return entry.done ? sum + (entry.xp || 0) : sum;
+      }, 0);
+      
+      totalXP += dayXP;
+      report += `${date.toLocaleDateString()}: ${dayXP} XP\n`;
+    }
+
+    report += '\n' + '='.repeat(30);
+    report += `\n\nTotal XP: ${totalXP}`;
+    report += `\nCurrent Level: ${state.level}`;
+    report += `\nTotal Gold: ${state.gold} 🪙`;
+
+    alert(report);
+  };
+}
+
+/* ============================================
+   SHOP
+   ============================================ */
+
+function renderShop() {
+  const shopItems = $('#shop-items');
+  if (!shopItems) return;
+
+  const items = [
+    { name: 'Wizard Avatar', cost: 100, avatar: '🧙‍♂️', icon: '🔮' },
+    { name: 'Knight Avatar', cost: 150, avatar: '⚔️', icon: '🛡️' },
+    { name: 'Ninja Avatar', cost: 200, avatar: '🥷', icon: '🗡️' },
+    { name: 'Mage Avatar', cost: 250, avatar: '🧙‍♂️', icon: '✨' }
+  ];
+
+  shopItems.innerHTML = items
+    .map(item => `
+      <div class="shop-item glass" role="listitem">
+        <div class="shop-item-header">
+          <span class="shop-item-icon">${item.icon}</span>
+          <div class="shop-item-info">
+            <div class="shop-item-name">${sanitizeInput(item.name)}</div>
+            <div class="shop-item-cost">${item.cost} 🪙</div>
+          </div>
+        </div>
+        <button 
+          onclick="buyItem('${item.avatar}', ${item.cost})"
+          class="btn-primary"
+          ${state.gold < item.cost ? 'disabled' : ''}
+          aria-label="Buy ${item.name}"
+        >
+          ${state.gold >= item.cost ? 'Buy Now' : 'Locked'}
+        </button>
+      </div>
+    `)
+    .join('');
+}
+
+window.buyItem = (avatar, cost) => {
+  if (state.gold >= cost) {
+    state.gold -= cost;
+    state.avatar = avatar;
+    
+    updateHeader();
+    syncData();
+    
+    playSuccessSound();
+    alert('🎉 Purchase successful! Avatar updated!');
+    
+    renderShop();
+  } else {
+    alert('❌ Not enough gold! Complete more quests to earn gold.');
   }
 };
 
-// ========================================
-// SHOP PAGE
-// ========================================
-const renderShop = () => {
-  const shopEl = $('shop-items');
-  if (!shopEl) return;
-  
-  const shopItems = [
-    { name: 'Wizard', cost: 100, avatar: '🧙‍♂️', icon: '🔮' },
-    { name: 'Knight', cost: 150, avatar: '⚔️', icon: '🛡️' },
-    { name: 'Ninja', cost: 200, avatar: '🥷', icon: '🗡️' },
-    { name: 'Mage', cost: 250, avatar: '🧙‍♂️', icon: '✨' }
-  ];
-  
-  shopEl.innerHTML = shopItems.map(item => `
-    <div class="shop-item">
-      <div class="shop-info">
-        <span class="shop-icon">${item.icon}</span>
-        <span class="shop-name">${sanitize(item.name)}</span>
-        <span class="shop-cost">${item.cost} 🪙</span>
-      </div>
-      <button class="shop-btn" 
-        ${state.gold < item.cost ? 'disabled' : ''} 
-        data-avatar="${item.avatar}" 
-        data-cost="${item.cost}">
-        ${state.gold >= item.cost ? 'Buy' : 'Locked'}
-      </button>
-    </div>
-  `).join('');
-  
-  // Add purchase handlers
-  $$('.shop-btn').forEach(button => {
-    if (!button.disabled) {
-      button.addEventListener('click', () => {
-        const avatar = button.dataset.avatar;
-        const cost = parseInt(button.dataset.cost);
-        
-        if (state.gold >= cost) {
-          state.gold -= cost;
-          state.avatar = avatar;
-          renderQuestList();
-          syncDataToFirebase();
-          alert('🎉 Purchase successful!');
-          renderShop();
-        }
-      });
-    }
-  });
-};
+/* ============================================
+   DATA SYNCHRONIZATION
+   ============================================ */
 
-// ========================================
-// FIREBASE SYNC (DEBOUNCED)
-// ========================================
-const syncDataToFirebase = async () => {
+async function syncData() {
   if (!user || isSyncing) return;
-  
-  clearTimeout(syncTimeout);
-  syncTimeout = setTimeout(async () => {
-    isSyncing = true;
-    
-    try {
-      // Save user data
-      await setDoc(doc(db, "users", user.uid), state, { merge: true });
-      
-      // Update leaderboard
-      await setDoc(doc(db, "leaderboard", user.uid), {
-        name: user.displayName || 'Hero',
-        xp: state.totalXp,
-        level: state.level,
-        timestamp: Date.now()
-      });
-    } catch (error) {
-      console.error('Firebase sync failed:', error);
-    } finally {
-      isSyncing = false;
-    }
-  }, 1000);
-};
 
-// ========================================
-// AUTHENTICATION
-// ========================================
-onAuthStateChanged(auth, async currentUser => {
-  user = currentUser;
+  isSyncing = true;
   
-  if (currentUser) {
+  try {
+    await setDoc(doc(db, "users", user.uid), state, { merge: true });
+    
+    await setDoc(doc(db, "leaderboard", user.uid), {
+      name: user.displayName || 'Hero',
+      xp: state.totalXp,
+      level: state.level,
+      updatedAt: Date.now()
+    });
+  } catch (error) {
+    console.error('Sync failed:', error);
+    showError('Failed to sync data. Changes may not be saved.');
+  } finally {
+    isSyncing = false;
+  }
+}
+
+/* ============================================
+   AUTHENTICATION
+   ============================================ */
+
+onAuthStateChanged(auth, async (usr) => {
+  user = usr;
+
+  if (usr) {
     try {
       showLoading(true);
-      
-      $('login-screen')?.classList.add('hidden');
-      $('app')?.classList.remove('hidden');
-      
-      // Load user data from Firestore
-      const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+
+      $('#login-screen')?.classList.add('hidden');
+      $('#app-screen')?.classList.remove('hidden');
+
+      const userNameEl = $('#user-name');
+      if (userNameEl) {
+        userNameEl.textContent = usr.displayName?.split(' ')[0] || 'HERO';
+      }
+
+      // Load user data
+      const userDoc = await getDoc(doc(db, "users", usr.uid));
       
       if (userDoc.exists()) {
         state = { ...state, ...userDoc.data() };
       } else {
-        // New user - set up default quests
+        // Initialize default quests for new users
         state.quests = {
           physical: [
             { name: "100 Pushups", xp: 20, repeat: true },
             { name: "30min Cardio", xp: 25, repeat: true }
           ],
           mental: [
-            { name: "Read 10 Pages", xp: 15, repeat: true }
+            { name: "Read 10 Pages", xp: 15, repeat: true },
+            { name: "Learn Something New", xp: 20, repeat: true }
           ],
           spiritual: [
-            { name: "Meditate 10min", xp: 10, repeat: true }
+            { name: "Meditate 10min", xp: 10, repeat: true },
+            { name: "Gratitude Journal", xp: 15, repeat: true }
           ],
           blights: [
-            { name: "Relapse", xp: -50, repeat: false }
+            { name: "Relapse", xp: -50, repeat: false },
+            { name: "Procrastination", xp: -20, repeat: false }
           ]
         };
-        await syncDataToFirebase();
+        await syncData();
       }
-      
-      renderQuestList();
-      loadQuote();
-      
-      // Set up leaderboard listener
+
+      // Initialize UI
+      switchTab('physical');
+      renderQuests();
+
+      // Setup leaderboard listener
       const leaderboardQuery = query(
         collection(db, "leaderboard"),
         orderBy("xp", "desc"),
         limit(10)
       );
-      
-      onSnapshot(leaderboardQuery, snapshot => {
-        const leaderboardEl = $('leaderboard');
-        if (!leaderboardEl) return;
-        
+
+      onSnapshot(leaderboardQuery, (snapshot) => {
+        const scoreboard = $('#scoreboard-list');
+        if (!scoreboard) return;
+
         if (snapshot.empty) {
-          leaderboardEl.innerHTML = '<p class="empty">No players yet</p>';
+          scoreboard.innerHTML = '<p class="empty-state">No players yet. Be the first!</p>';
           return;
         }
-        
-        leaderboardEl.innerHTML = '';
-        snapshot.forEach((docSnapshot, index) => {
-          const playerData = docSnapshot.data();
+
+        scoreboard.innerHTML = '';
+        snapshot.forEach((doc, index) => {
+          const data = doc.data();
           const position = index + 1;
-          const medal = position === 1 ? '🥇' : 
-                       position === 2 ? '🥈' : 
-                       position === 3 ? '🥉' : '';
+          const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '';
           
-          leaderboardEl.innerHTML += `
-            <div class="lb-item">
-              <span>${medal} ${position}. ${sanitize(playerData.name || 'Hero')} (Lvl ${playerData.level || 1})</span>
-              <span class="lb-xp">${playerData.xp || 0} XP</span>
+          scoreboard.innerHTML += `
+            <div class="leaderboard-item" role="listitem">
+              <span>${medal} ${position}. ${sanitizeInput(data.name || 'Hero')} (Lvl ${data.level || 1})</span>
+              <span class="leaderboard-xp">${data.xp || 0} XP</span>
             </div>
           `;
         });
       });
-      
+
     } catch (error) {
       console.error('Failed to load user data:', error);
-      showError('Failed to load data');
+      showError('Failed to load your data. Please try again.');
     } finally {
       showLoading(false);
     }
+
   } else {
-    // User logged out
-    $('login-screen')?.classList.remove('hidden');
-    $('app')?.classList.add('hidden');
+    $('#login-screen')?.classList.remove('hidden');
+    $('#app-screen')?.classList.add('hidden');
   }
 });
 
-// Login button handler
-$('login-btn')?.addEventListener('click', async () => {
+// Login handler
+$('#google-login-btn')?.addEventListener('click', async () => {
   try {
     showLoading(true);
     await signInWithPopup(auth, provider);
   } catch (error) {
     console.error('Login failed:', error);
-    const errorMessage = error.code === 'auth/popup-closed-by-user' 
-      ? 'Login cancelled' 
-      : 'Login failed';
-    showError(errorMessage);
+    let message = 'Login failed. Please try again.';
+    
+    if (error.code === 'auth/popup-closed-by-user') {
+      message = 'Login cancelled.';
+    } else if (error.code === 'auth/network-request-failed') {
+      message = 'Network error. Please check your connection.';
+    }
+    
+    showError(message);
   } finally {
     showLoading(false);
   }
 });
 
-// Logout button handler
-$('logout-btn')?.addEventListener('click', async () => {
+// Logout handler
+$('#logout-btn')?.addEventListener('click', async () => {
   if (confirm('Are you sure you want to logout?')) {
     try {
       await signOut(auth);
     } catch (error) {
       console.error('Logout failed:', error);
-      showError('Logout failed');
+      showError('Logout failed. Please try again.');
     }
   }
 });
-// ========================================
-// ADD QUEST PANEL TOGGLE (CLEANED & FIXED)
-// ========================================
-window.toggleAddPanel = () => {
-  const panel = $('add-panel');
-  const btn = $('toggle-add-btn');
-  if (!panel || !btn) return;
 
-  panel.classList.toggle('hidden');
+/* ============================================
+   KEYBOARD SHORTCUTS
+   ============================================ */
 
-  // Rotate plus icon to X when open
-  const icon = btn.querySelector('i');
-  if (panel.classList.contains('hidden')) {
-    icon.classList.replace('fa-minus', 'fa-plus');
-  } else {
-    icon.classList.replace('fa-plus', 'fa-minus');
-  }
-};
-
-// Ensure panel starts hidden
-document.addEventListener('DOMContentLoaded', () => {
-  $('add-panel')?.classList.add('hidden');
-  // Set initial icon
-  const icon = $('toggle-add-btn')?.querySelector('i');
-  if (icon) icon.classList.add('fa-plus');
-});
-
-// Toggle button listener
-$('toggle-add-btn')?.addEventListener('click', toggleAddPanel);
-
-// In your add quest handler (after successful add)
-$('add-btn')?.addEventListener('click', () => {
-  // ... existing validation and add logic ...
-
-  // Clear form
-  $('quest-name').value = '';
-  $('quest-xp').value = '';
-  $('quest-repeat').checked = false;
-
-  toggleAddPanel();        // Close panel after adding
-  renderQuestList();
-  syncDataToFirebase();
-});
-
-// Optional: Close panel when clicking outside (mobile friendly)
-document.addEventListener('click', (e) => {
-  const panel = $('add-panel');
-  const toggleBtn = $('toggle-add-btn');
-  const addBtn = $('add-btn');
-  if (!panel?.classList.contains('hidden') &&
-      !panel.contains(e.target) &&
-      !toggleBtn?.contains(e.target) &&
-      !addBtn?.contains(e.target)) {
-    toggleAddPanel();
+document.addEventListener('keydown', (e) => {
+  // Quick navigation (Alt + number)
+  if (e.altKey && !e.ctrlKey && !e.metaKey) {
+    const tabs = ['physical', 'mental', 'spiritual', 'blights', 'stats', 'shop'];
+    const num = parseInt(e.key);
+    if (num >= 1 && num <= tabs.length) {
+      e.preventDefault();
+      switchTab(tabs[num - 1]);
+    }
   }
 });
-// ========================================
-// INITIALIZATION COMPLETE
-// ========================================
-console.log('🎮 Hero\'s Quest initialized and ready!');
+
+/* ============================================
+   INITIALIZATION
+   ============================================ */
+
+console.log('Hero\'s Quest initialized successfully!');

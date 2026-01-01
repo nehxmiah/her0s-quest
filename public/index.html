@@ -2,196 +2,240 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Hero's Quest - Gamify your life and track your habits">
   <meta name="theme-color" content="#00f2ff">
   <title>Hero's Quest - Gamified Habit Tracker</title>
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%2300f2ff' /%3E%3Cpath d='M 35 45 L 50 20 L 65 45 L 50 75 Z' fill='%23000' /%3E%3C/svg%3E">
-
   <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Space+Grotesk:wght@400;500;700&family=Orbitron:wght@400;700;900&family=Righteous&display=swap" rel="stylesheet">
 
   <!-- Libraries -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
-<body data-theme="login">
-  <!-- Animated Background Canvas -->
-  <canvas id="bg" aria-hidden="true"></canvas>
+<body data-theme="physical">
+  <!-- WebGL Background -->
+  <canvas id="webGLApp" aria-hidden="true"></canvas>
 
   <!-- Loading Spinner -->
-  <div id="loading" class="spinner hidden" role="status">
+  <div id="loading-spinner" class="spinner hidden" role="status">
     <div class="spinner-ring"></div>
+    <span class="sr-only">Loading...</span>
   </div>
 
   <!-- Login Screen -->
-  <div id="login-screen" class="container">
-    <h1 class="title">HERO'S QUEST</h1>
-    <p class="subtitle">Transform your life, one quest at a time</p>
-    <button id="login-btn" class="btn-primary">
-      <i class="fab fa-google"></i> START JOURNEY
-    </button>
-    <div id="error" class="error hidden" role="alert"></div>
+  <div id="login-screen" class="login-container">
+    <div class="login-card glass">
+      <h1 class="login-title">HERO'S QUEST</h1>
+      <p class="login-subtitle">Transform your life, one quest at a time</p>
+      <button id="google-login-btn" class="btn-primary">
+        <i class="fab fa-google"></i> START REDEMPTION
+      </button>
+      <div id="login-error" class="error-message hidden" role="alert"></div>
+    </div>
   </div>
 
-  <!-- Main App Container -->
-  <div id="app" class="container hidden">
-    <!-- Header with User Info and Progress -->
-    <header class="glass">
-      <div class="user-row">
-        <div class="user-info">
-          <span id="avatar">🦸‍♂️</span>
-          <span id="username">HERO</span>
+  <!-- Main App -->
+  <div id="app-screen" class="app-container hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar glass" id="sidebar">
+      <!-- Mobile Toggle -->
+      <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+        <i class="fas fa-bars"></i>
+      </button>
+
+      <!-- User Info -->
+      <div class="user-section">
+        <div class="user-avatar" id="avatar">🦸‍♂️</div>
+        <h2 class="user-name" id="user-name">HERO</h2>
+        <div class="level-badge" id="level-display">LVL 1</div>
+      </div>
+
+      <!-- XP Progress -->
+      <div class="xp-section">
+        <div class="xp-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+          <div class="xp-fill" id="xp-fill"></div>
         </div>
-        <button id="logout-btn" class="btn-text">
-          <i class="fas fa-sign-out-alt"></i>
+        <div class="xp-text" id="xp-text">0 / 100 XP</div>
+      </div>
+
+      <!-- Gold Display -->
+      <div class="gold-display">
+        <i class="fas fa-coins"></i>
+        <span id="gold">0</span>
+        <span class="gold-label">Gold</span>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="sidebar-nav" role="navigation" aria-label="Main navigation">
+        <button class="nav-btn active" data-tab="physical">
+          <i class="fas fa-dumbbell"></i>
+          <span>Physical</span>
         </button>
-      </div>
-      
-      <div id="level" class="level">LVL 1</div>
-      
-      <div class="xp-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-        <div id="xp-fill"></div>
-        <span id="xp-text">0 / 100 XP</span>
-      </div>
-      
-      <div class="gold">Gold: <span id="gold">0</span> 🪙</div>
-    </header>
-
-    <!-- Category Navigation Tabs -->
-    <nav class="nav">
-      <button data-tab="physical" class="active">
-        <i class="fas fa-dumbbell"></i><span>PHY</span>
-      </button>
-      <button data-tab="mental">
-        <i class="fas fa-brain"></i><span>MEN</span>
-      </button>
-      <button data-tab="spiritual">
-        <i class="fas fa-cross"></i><span>SPI</span>
-      </button>
-      <button data-tab="blights">
-        <i class="fas fa-skull"></i><span>BLT</span>
-      </button>
-      <button data-tab="stats">
-        <i class="fas fa-chart-line"></i><span>STATS</span>
-      </button>
-      <button data-tab="shop">
-        🪪<span>SHOP</span>
-      </button>
-    </nav>
-
-    <!-- Quests Section -->
-    <main id="quests">
-      <h2 id="title">PHYSICAL</h2>
-      <div id="quote" class="quote"></div>
-      <div id="list"></div>
-
-      <!-- Add New Quest Panel -->
-       <button id="toggle-add-btn" class="btn-text" onclick="toggleAddPanel()">
-  <i class="fas fa-plus-circle"></i> NEW QUEST
-</button>
-<button id="toggle-add-btn" class="btn-add" style="position: fixed; bottom: 80px; right: 16px; z-index: 98;">
-    <i class="fas fa-plus"></i>
-  </button>
-
-      <div id="add-panel" class="glass hidden">
-        <input id="quest-name" type="text" placeholder="Quest name..." maxlength="50">
-        <input id="quest-xp" type="number" placeholder="XP" min="-100" max="500">
-        <label class="checkbox">
-          <input id="quest-repeat" type="checkbox"> 
-          <span>Daily</span>
-        </label>
-        <button id="add-btn" class="btn-add">
-          <i class="fas fa-plus"></i>
+        <button class="nav-btn" data-tab="mental">
+          <i class="fas fa-brain"></i>
+          <span>Mental</span>
         </button>
-      </div>
+        <button class="nav-btn" data-tab="spiritual">
+          <i class="fas fa-cross"></i>
+          <span>Spiritual</span>
+        </button>
+        <button class="nav-btn" data-tab="blights">
+          <i class="fas fa-biohazard"></i>
+          <span>Blights</span>
+        </button>
+        <button class="nav-btn" data-tab="stats">
+          <i class="fas fa-chart-line"></i>
+          <span>Statistics</span>
+        </button>
+        <button class="nav-btn" data-tab="shop">
+          <i class="fas fa-store"></i>
+          <span>Shop</span>
+        </button>
+      </nav>
+
+      <!-- Logout Button -->
+      <button class="btn-logout" id="logout-btn">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Logout</span>
+      </button>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Header -->
+      <header class="content-header glass">
+        <div class="header-top">
+          <h1 class="page-title" id="view-title">PHYSICAL QUESTS</h1>
+          <div class="date-display" id="current-date"></div>
+        </div>
+      </header>
+
+      <!-- Quest Area -->
+      <section id="quest-area" class="content-section">
+        <!-- Motivational Quote -->
+        <div class="quote-card glass" id="motivational-quote">
+          <div class="quote-skeleton"></div>
+        </div>
+
+        <!-- Quest List -->
+        <div class="quest-list-container glass">
+          <div class="quest-list-header">
+            <h2>Active Quests</h2>
+            <button class="btn-toggle-add" id="toggle-add-quest" aria-label="Toggle add quest form">
+              <i class="fas fa-plus"></i>
+            </button>
+          </div>
+
+          <!-- Add Quest Form (Hidden by default) -->
+          <div class="add-quest-form hidden" id="add-quest-form">
+            <div class="form-group">
+              <input 
+                type="text" 
+                id="new-name" 
+                placeholder="Quest name..." 
+                maxlength="50"
+                aria-label="Quest name"
+              >
+            </div>
+            <div class="form-row">
+              <input 
+                type="number" 
+                id="new-xp" 
+                placeholder="XP" 
+                min="-100" 
+                max="500"
+                aria-label="XP value"
+              >
+              <label class="checkbox-label">
+                <input type="checkbox" id="new-repeat">
+                <span>Daily Quest</span>
+              </label>
+              <button class="btn-primary btn-add" id="add-quest-btn">
+                <i class="fas fa-check"></i> Add
+              </button>
+            </div>
+          </div>
+
+          <!-- Quest Items -->
+          <div class="quest-list" id="habit-list" role="list"></div>
+        </div>
+      </section>
+
+      <!-- Stats Area -->
+      <section id="stats-area" class="content-section hidden">
+        <div class="stats-grid">
+          <!-- XP Chart -->
+          <div class="stat-card glass">
+            <h3>Last 7 Days Progress</h3>
+            <div class="chart-container">
+              <canvas id="xpChart" aria-label="XP progress chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Streak Info -->
+          <div class="stat-card glass streak-card">
+            <i class="fas fa-fire"></i>
+            <div class="streak-info" id="streak-info">
+              <div class="streak-number">0</div>
+              <div class="streak-label">Day Streak</div>
+            </div>
+          </div>
+
+          <!-- Badges -->
+          <div class="stat-card glass">
+            <h3>Badges Earned</h3>
+            <div class="badges-grid" id="badges-list" role="list"></div>
+          </div>
+
+          <!-- Leaderboard -->
+          <div class="stat-card glass">
+            <h3>Leaderboard</h3>
+            <div class="leaderboard-list" id="scoreboard-list" role="list"></div>
+          </div>
+        </div>
+
+        <button class="btn-primary btn-report" id="weekly-report">
+          <i class="fas fa-file-alt"></i> Generate Weekly Report
+        </button>
+      </section>
+
+      <!-- Shop Area -->
+      <section id="shop-area" class="content-section hidden">
+        <div class="shop-grid" id="shop-items" role="list"></div>
+      </section>
     </main>
+  </div>
 
-    <!-- Stats Section -->
-    <section id="stats" class="hidden">
-      <h2>YOUR LEGEND</h2>
+  <!-- Rating Modal -->
+  <div id="rating-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content glass">
+      <h3 class="modal-title" id="modal-quest-name">Rate Quest</h3>
+      <p class="modal-description">How well did you complete this quest?</p>
       
-      <!-- Stats Summary Cards -->
-      <div class="stats-grid">
-        <div class="stat-card glass">
-          <div class="stat-icon">📊</div>
-          <div class="stat-value" id="total-xp">0</div>
-          <div class="stat-label">Total XP</div>
-        </div>
-        <div class="stat-card glass">
-          <div class="stat-icon">🏆</div>
-          <div class="stat-value" id="level-stat">1</div>
-          <div class="stat-label">Level</div>
-        </div>
-        <div class="stat-card glass">
-          <div class="stat-icon">🔥</div>
-          <div class="stat-value" id="streak">0</div>
-          <div class="stat-label">Streak</div>
-        </div>
-        <div class="stat-card glass">
-          <div class="stat-icon">🪙</div>
-          <div class="stat-value" id="gold-stat">0</div>
-          <div class="stat-label">Gold</div>
-        </div>
+      <div class="rating-stars" role="radiogroup" aria-label="Quest rating">
+        <i class="far fa-star" data-value="1"></i>
+        <i class="far fa-star" data-value="2"></i>
+        <i class="far fa-star" data-value="3"></i>
+        <i class="far fa-star" data-value="4"></i>
+        <i class="far fa-star" data-value="5"></i>
       </div>
 
-      <!-- Weekly Progress Chart -->
-      <div class="glass">
-        <h3><i class="fas fa-chart-line"></i> Weekly Progress</h3>
-        <canvas id="chart"></canvas>
+      <div class="rating-moods" role="radiogroup" aria-label="Current mood">
+        <span data-mood="happy">😊</span>
+        <span data-mood="neutral">😐</span>
+        <span data-mood="sad">😔</span>
       </div>
 
-      <!-- Badges Section -->
-      <div class="glass">
-        <h3><i class="fas fa-medal"></i> Badges</h3>
-        <div id="badges"></div>
-      </div>
-
-      <!-- Leaderboard Section -->
-      <div class="glass">
-        <h3><i class="fas fa-crown"></i> Leaderboard</h3>
-        <div id="leaderboard"></div>
-      </div>
-    </section>
-
-    <!-- Shop Section -->
-    <section id="shop" class="glass hidden">
-      <h2>Hero's Shop</h2>
-      <div id="shop-items"></div>
-    </section>
-
-    <!-- Quest Rating Modal -->
-    <div id="modal" class="modal hidden" role="dialog">
-      <div class="modal-content glass">
-        <h3 id="modal-title">Rate Quest</h3>
-        <p>How well did you complete this quest?</p>
-        
-        <!-- Star Rating -->
-        <div class="stars">
-          <i class="far fa-star" data-value="1"></i>
-          <i class="far fa-star" data-value="2"></i>
-          <i class="far fa-star" data-value="3"></i>
-          <i class="far fa-star" data-value="4"></i>
-          <i class="far fa-star" data-value="5"></i>
-        </div>
-        
-        <!-- Mood Selection -->
-        <div class="moods">
-          <span data-mood="happy">😊</span>
-          <span data-mood="neutral">😐</span>
-          <span data-mood="sad">😔</span>
-        </div>
-        
-        <!-- Action Buttons -->
-        <div class="modal-btns">
-          <button id="cancel-btn" class="btn-text">Cancel</button>
-          <button id="confirm-btn" class="btn-primary">Confirm</button>
-        </div>
+      <div class="modal-buttons">
+        <button class="btn-secondary" id="cancel-rating">Cancel</button>
+        <button class="btn-primary" id="confirm-rating">Confirm</button>
       </div>
     </div>
   </div>
