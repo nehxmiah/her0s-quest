@@ -1,14 +1,14 @@
 // ========================================
 // FIREBASE IMPORTS & CONFIGURATION
 // ========================================
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"; // Update to latest minor if needed
 import { 
   getAuth, 
   signInWithPopup, 
   GoogleAuthProvider, 
   onAuthStateChanged, 
   signOut 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { 
   getFirestore, 
   doc, 
@@ -19,7 +19,7 @@ import {
   orderBy, 
   limit, 
   onSnapshot 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBDTTyEWFBam2EEWK4X2VV5E-wUJx10V38",
@@ -820,47 +820,61 @@ $('logout-btn')?.addEventListener('click', async () => {
     }
   }
 });
-
-// Add this function to script.js
+// ========================================
+// ADD QUEST PANEL TOGGLE (CLEANED & FIXED)
+// ========================================
 window.toggleAddPanel = () => {
-    const panel = document.getElementById('add-panel');
-    const btn = document.getElementById('toggle-add-btn');
-    
-    panel.classList.toggle('hidden');
-    
-    // Optional: Rotate the icon when open
-    const icon = btn.querySelector('i');
-    icon.style.transform = panel.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(45deg)';
-    icon.style.transition = 'transform 0.3s ease';
+  const panel = $('add-panel');
+  const btn = $('toggle-add-btn');
+  if (!panel || !btn) return;
+
+  panel.classList.toggle('hidden');
+
+  // Rotate plus icon to X when open
+  const icon = btn.querySelector('i');
+  if (panel.classList.contains('hidden')) {
+    icon.classList.replace('fa-minus', 'fa-plus');
+  } else {
+    icon.classList.replace('fa-plus', 'fa-minus');
+  }
 };
-/// Ensure the Add Panel starts hidden
-document.getElementById('add-panel')?.classList.add('hidden');
 
-// 1. Toggle Button Logic
-// Make sure you have a button with id="toggle-add-btn" in your HTML
-document.getElementById('toggle-add-btn')?.addEventListener('click', () => {
-    const panel = document.getElementById('add-panel');
-    panel.classList.toggle('hidden');
+// Ensure panel starts hidden
+document.addEventListener('DOMContentLoaded', () => {
+  $('add-panel')?.classList.add('hidden');
+  // Set initial icon
+  const icon = $('toggle-add-btn')?.querySelector('i');
+  if (icon) icon.classList.add('fa-plus');
 });
 
-// 2. Start Redemption (Login) Button Fix
-// This ensures the button works even if Firebase is slow to load
-document.getElementById('google-login-btn')?.addEventListener('click', async () => {
-    try {
-        await signInWithPopup(auth, provider);
-    } catch (error) {
-        console.error("Login failed:", error);
-    }
+// Toggle button listener
+$('toggle-add-btn')?.addEventListener('click', toggleAddPanel);
+
+// In your add quest handler (after successful add)
+$('add-btn')?.addEventListener('click', () => {
+  // ... existing validation and add logic ...
+
+  // Clear form
+  $('quest-name').value = '';
+  $('quest-xp').value = '';
+  $('quest-repeat').checked = false;
+
+  toggleAddPanel();        // Close panel after adding
+  renderQuestList();
+  syncDataToFirebase();
 });
-// Add to the bottom of script.js
-$('toggle-panel-btn')?.addEventListener('click', () => {
-    const panel = $('add-panel');
-    const isHidden = panel.classList.toggle('hidden');
-    
-    // Optional: Change button text based on state
-    $('toggle-panel-btn').innerHTML = isHidden 
-        ? '<i class="fas fa-plus-circle"></i> ADD NEW QUEST' 
-        : '<i class="fas fa-times-circle"></i> CLOSE';
+
+// Optional: Close panel when clicking outside (mobile friendly)
+document.addEventListener('click', (e) => {
+  const panel = $('add-panel');
+  const toggleBtn = $('toggle-add-btn');
+  const addBtn = $('add-btn');
+  if (!panel?.classList.contains('hidden') &&
+      !panel.contains(e.target) &&
+      !toggleBtn?.contains(e.target) &&
+      !addBtn?.contains(e.target)) {
+    toggleAddPanel();
+  }
 });
 // ========================================
 // INITIALIZATION COMPLETE

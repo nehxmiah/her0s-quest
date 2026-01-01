@@ -92,7 +92,14 @@
       <div id="list"></div>
 
       <!-- Add New Quest Panel -->
-      <div id="add-panel" class="glass">
+       <button id="toggle-add-btn" class="btn-text" onclick="toggleAddPanel()">
+  <i class="fas fa-plus-circle"></i> NEW QUEST
+</button>
+<button id="toggle-add-btn" class="btn-add" style="position: fixed; bottom: 80px; right: 16px; z-index: 98;">
+    <i class="fas fa-plus"></i>
+  </button>
+
+      <div id="add-panel" class="glass hidden">
         <input id="quest-name" type="text" placeholder="Quest name..." maxlength="50">
         <input id="quest-xp" type="number" placeholder="XP" min="-100" max="500">
         <label class="checkbox">

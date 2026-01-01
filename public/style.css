@@ -1121,3 +1121,15 @@ header {
         border-radius: 12px;
     }
 }
+
+/* Better positioning for toggle button on small screens */
+@media (max-width: 480px) {
+  #toggle-add-btn {
+    bottom: 76px;
+    right: 12px;
+  }
+  
+  #list {
+    margin-bottom: 160px; /* Extra space for fixed buttons */
+  }
+}
