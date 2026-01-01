@@ -1,10 +1,11 @@
+// script.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* ============================================
-   FIREBASE CONFIGURATION
-   ============================================ */
+// ============================================
+// FIREBASE CONFIGURATION
+// ============================================
 
 const firebaseConfig = {
   apiKey: "AIzaSyBDTTyEWFBam2EEWK4X2VV5E-wUJx10V38",
@@ -20,9 +21,9 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-/* ============================================
-   APPLICATION STATE
-   ============================================ */
+// ============================================
+// APPLICATION STATE
+// ============================================
 
 let state = {
   xp: 0,
@@ -47,9 +48,9 @@ let pendingTask = null;
 let selectedMood = null;
 let isSyncing = false;
 
-/* ============================================
-   UTILITY FUNCTIONS
-   ============================================ */
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
@@ -82,9 +83,9 @@ function getTodayString() {
   return new Date().toISOString().slice(0, 10);
 }
 
-/* ============================================
-   LIQUID BACKGROUND ENGINE
-   ============================================ */
+// ============================================
+// LIQUID BACKGROUND ENGINE
+// ============================================
 
 class LiquidEngine {
   constructor() {
@@ -184,9 +185,9 @@ const themeColors = {
   blights: [[1, 0.1, 0.1], [0.05, 0, 0]]
 };
 
-/* ============================================
-   EFFECTS & FEEDBACK
-   ============================================ */
+// ============================================
+// EFFECTS & FEEDBACK
+// ============================================
 
 function vibrate(pattern) {
   if ('vibrate' in navigator) {
@@ -235,9 +236,9 @@ function playSuccessSound() {
   playSound('https://www.orangefreesounds.com/wp-content/uploads/2014/08/Success-sound-effect.mp3');
 }
 
-/* ============================================
-   NAVIGATION & UI
-   ============================================ */
+// ============================================
+// NAVIGATION & UI HANDLERS
+// ============================================
 
 function switchTab(tab) {
   if (!['physical', 'mental', 'spiritual', 'blights', 'stats', 'shop'].includes(tab)) {
@@ -248,18 +249,14 @@ function switchTab(tab) {
   currentTab = tab;
   document.body.setAttribute('data-theme', tab);
   
-  // Update nav buttons
   $$('.nav-btn').forEach(btn => {
-    const isActive = btn.dataset.tab === tab;
-    btn.classList.toggle('active', isActive);
+    btn.classList.toggle('active', btn.dataset.tab === tab);
   });
 
-  // Update theme
   if (engine && themeColors[tab]) {
     engine.updateTheme(...themeColors[tab]);
   }
 
-  // Update title
   const titles = {
     physical: 'PHYSICAL QUESTS',
     mental: 'MENTAL QUESTS',
@@ -269,60 +266,45 @@ function switchTab(tab) {
     shop: 'HERO\'S SHOP'
   };
   
-  const titleEl = $('#view-title');
-  if (titleEl) titleEl.textContent = titles[tab];
+  $('#view-title').textContent = titles[tab];
 
-  // Toggle sections
-  const questArea = $('#quest-area');
-  const statsArea = $('#stats-area');
-  const shopArea = $('#shop-area');
-
-  if (questArea) questArea.classList.toggle('hidden', tab === 'stats' || tab === 'shop');
-  if (statsArea) statsArea.classList.toggle('hidden', tab !== 'stats');
-  if (shopArea) shopArea.classList.toggle('hidden', tab !== 'shop');
+  $('#quest-area').classList.toggle('hidden', tab === 'stats' || tab === 'shop');
+  $('#stats-area').classList.toggle('hidden', tab !== 'stats');
+  $('#shop-area').classList.toggle('hidden', tab !== 'shop');
 
   updateHeader();
   renderQuests();
 
-  // Load content based on tab
   if (tab !== 'stats' && tab !== 'shop') {
     loadQuote();
   }
   if (tab === 'stats') renderStats();
   if (tab === 'shop') renderShop();
 
-  // Close sidebar on mobile after navigation
   if (window.innerWidth <= 768) {
-    $('#sidebar')?.classList.remove('active');
+    $('#sidebar').classList.remove('active');
   }
 }
 
-// Setup nav buttons
 $$('.nav-btn').forEach(btn => {
   btn.addEventListener('click', () => switchTab(btn.dataset.tab));
 });
 
-// Setup sidebar toggle
-$('#sidebar-toggle')?.addEventListener('click', () => {
-  $('#sidebar')?.classList.toggle('active');
+$('#sidebar-toggle').addEventListener('click', () => {
+  $('#sidebar').classList.toggle('active');
 });
 
-// Close sidebar when clicking outside on mobile
 document.addEventListener('click', (e) => {
   const sidebar = $('#sidebar');
   const toggle = $('#sidebar-toggle');
-  
-  if (window.innerWidth <= 768 && 
-      sidebar?.classList.contains('active') &&
-      !sidebar.contains(e.target) &&
-      !toggle?.contains(e.target)) {
+  if (window.innerWidth <= 768 && sidebar.classList.contains('active') && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
     sidebar.classList.remove('active');
   }
 });
 
-/* ============================================
-   HEADER UPDATES
-   ============================================ */
+// ============================================
+// HEADER UPDATES
+// ============================================
 
 function updateHeader() {
   const dateEl = $('#current-date');
@@ -353,9 +335,9 @@ function updateHeader() {
   }
 }
 
-/* ============================================
-   MOTIVATIONAL QUOTE
-   ============================================ */
+// ============================================
+// MOTIVATIONAL QUOTE
+// ============================================
 
 async function loadQuote() {
   const box = $('#motivational-quote');
@@ -363,110 +345,56 @@ async function loadQuote() {
 
   box.innerHTML = '<div class="quote-skeleton"></div>';
 
-  // Hardcoded motivational quotes as fallback for CORS issues
   const fallbackQuotes = [
-    { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
-    { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
-    { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
-    { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
-    { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
-    { text: "Everything you've ever wanted is on the other side of fear.", author: "George Addair" },
-    { text: "Success is not how high you have climbed, but how you make a positive difference to the world.", author: "Roy T. Bennett" },
-    { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
-    { text: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
-    { text: "Small daily improvements are the key to staggering long-term results.", author: "Unknown" },
-    { text: "Discipline is choosing between what you want now and what you want most.", author: "Abraham Lincoln" },
-    { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
-    { text: "The difference between who you are and who you want to be is what you do.", author: "Unknown" },
-    { text: "Your limitation—it's only your imagination.", author: "Unknown" },
-    { text: "Push yourself, because no one else is going to do it for you.", author: "Unknown" },
-    { text: "Great things never come from comfort zones.", author: "Unknown" },
-    { text: "Dream it. Wish it. Do it.", author: "Unknown" },
-    { text: "Success doesn't just find you. You have to go out and get it.", author: "Unknown" },
-    { text: "The harder you work for something, the greater you'll feel when you achieve it.", author: "Unknown" },
-    { text: "Dream bigger. Do bigger.", author: "Unknown" }
+    { q: "The only way to do great work is to love what you do.", a: "Steve Jobs" },
+    { q: "Success is not final, failure is not fatal: it is the courage to continue that counts.", a: "Winston Churchill" },
+    // ... (add more fallbacks as needed)
   ];
 
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
-
-    // Try quotable API (CORS-friendly)
-    const res = await fetch('https://api.quotable.io/random?tags=inspirational|motivational|success', {
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-
+    const res = await fetch('https://zenquotes.io/api/random');
     if (!res.ok) throw new Error('Quote fetch failed');
-
-    const quote = await res.json();
-    box.innerHTML = `<p>"${sanitizeInput(quote.content)}"</p><small>— ${sanitizeInput(quote.author)}</small>`;
+    const [quote] = await res.json();
+    box.innerHTML = `<p>"${sanitizeInput(quote.q)}"</p><small>— ${sanitizeInput(quote.a)}</small>`;
   } catch (error) {
-    console.warn('Failed to load quote from API, using fallback:', error);
-    // Use random fallback quote
+    console.warn('Failed to load quote from ZenQuotes:', error);
     const randomQuote = fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)];
-    box.innerHTML = `<p>"${sanitizeInput(randomQuote.text)}"</p><small>— ${sanitizeInput(randomQuote.author)}</small>`;
+    box.innerHTML = `<p>"${sanitizeInput(randomQuote.q)}"</p><small>— ${sanitizeInput(randomQuote.a)}</small>`;
   }
 }
 
-/* ============================================
-   TOGGLE ADD QUEST FORM
-   ============================================ */
+// ============================================
+// TOGGLE ADD QUEST FORM
+// ============================================
 
-$('#toggle-add-quest')?.addEventListener('click', function() {
+$('#toggle-add-quest').addEventListener('click', function() {
   const form = $('#add-quest-form');
-  const isHidden = form?.classList.contains('hidden');
-  
-  form?.classList.toggle('hidden');
+  form.classList.toggle('hidden');
   this.classList.toggle('active');
-  
-  if (isHidden) {
-    // Focus on quest name input when opening
-    $('#new-name')?.focus();
+  if (!form.classList.contains('hidden')) {
+    $('#new-name').focus();
   }
 });
 
-/* ============================================
-   QUEST MANAGEMENT
-   ============================================ */
+// ============================================
+// QUEST MANAGEMENT
+// ============================================
 
 function addNewQuest() {
   const nameInput = $('#new-name');
   const xpInput = $('#new-xp');
   const repeatInput = $('#new-repeat');
 
-  if (!nameInput || !xpInput || !repeatInput) return;
-
   const name = nameInput.value.trim();
   const xp = validateXP(xpInput.value);
   const repeat = repeatInput.checked;
 
-  if (!name) {
-    showError('Quest name is required');
-    nameInput.focus();
-    return;
-  }
-
-  if (xp === null) {
-    showError('XP must be between -100 and 500');
-    xpInput.focus();
-    return;
-  }
-
-  if (name.length > 50) {
-    showError('Quest name is too long (max 50 characters)');
-    return;
-  }
-
-  // Check for duplicates
-  if (state.quests[currentTab].some(q => q.name === name)) {
-    showError('A quest with this name already exists');
-    return;
-  }
+  if (!name) return showError('Quest name is required');
+  if (xp === null) return showError('XP must be between -100 and 500');
+  if (name.length > 50) return showError('Quest name too long (max 50)');
+  if (state.quests[currentTab].some(q => q.name === name)) return showError('Duplicate quest name');
 
   state.quests[currentTab].push({ name, xp, repeat });
-
-  // Clear inputs
   nameInput.value = '';
   xpInput.value = '';
   repeatInput.checked = false;
@@ -474,221 +402,148 @@ function addNewQuest() {
   renderQuests();
   syncData();
 
-  // Close form and show success feedback
-  $('#add-quest-form')?.classList.add('hidden');
-  $('#toggle-add-quest')?.classList.remove('active');
+  $('#add-quest-form').classList.add('hidden');
+  $('#toggle-add-quest').classList.remove('active');
 }
 
-// Setup add quest button
-$('#add-quest-btn')?.addEventListener('click', addNewQuest);
-
-// Allow Enter key to add quest
-$('#new-name')?.addEventListener('keypress', (e) => {
+$('#add-quest-btn').addEventListener('click', addNewQuest);
+$('#new-name').addEventListener('keypress', (e) => {
   if (e.key === 'Enter') {
     e.preventDefault();
     addNewQuest();
   }
 });
 
-/* ============================================
-   TASK COMPLETION & RATING
-   ============================================ */
+// ============================================
+// TASK COMPLETION & RATING
+// ============================================
 
-function toggleTask(name, baseXp) {
+window.toggleTask = function(name, baseXp) {
   const today = getTodayString();
-  
-  if (state.history[today]?.[name]?.done) {
-    alert("Already completed today!");
-    return;
-  }
+  if (state.history[today]?.[name]?.done) return alert("Already completed today!");
 
   pendingTask = { name, baseXp };
-  
-  const modalTitle = $('#modal-quest-name');
-  if (modalTitle) modalTitle.textContent = `Rate "${sanitizeInput(name)}"`;
+  $('#modal-quest-name').textContent = `Rate "${sanitizeInput(name)}"`;
 
-  // Reset stars
   $$('.rating-stars i').forEach(s => {
     s.classList.remove('active', 'fas');
     s.classList.add('far');
   });
 
-  // Reset moods
-  $$('.rating-moods span').forEach(m => {
-    m.classList.remove('active');
-  });
-
+  $$('.rating-moods span').forEach(m => m.classList.remove('active'));
   selectedMood = null;
   setRating(5);
 
-  const modal = $('#rating-modal');
-  if (modal) {
-    modal.classList.add('active');
-    // Focus first star for accessibility
-    modal.querySelector('.rating-stars i')?.focus();
-  }
-}
+  $('#rating-modal').classList.add('active');
+};
 
 function setRating(value) {
   $$('.rating-stars i').forEach((star, i) => {
-    const isActive = i < value;
-    star.classList.toggle('active', isActive);
-    star.classList.toggle('fas', isActive);
-    star.classList.toggle('far', !isActive);
+    star.classList.toggle('active', i < value);
+    star.classList.toggle('fas', i < value);
+    star.classList.toggle('far', i >= value);
   });
 }
 
-// Star click handlers
 $$('.rating-stars i').forEach(star => {
-  star.addEventListener('click', () => {
-    const value = parseInt(star.dataset.value);
-    if (!isNaN(value)) setRating(value);
-  });
-
-  // Keyboard support
-  star.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      star.click();
-    }
-  });
+  star.addEventListener('click', () => setRating(star.dataset.value));
 });
 
-// Mood handlers
 $$('.rating-moods span').forEach(mood => {
   mood.addEventListener('click', () => {
     $$('.rating-moods span').forEach(m => m.classList.remove('active'));
     mood.classList.add('active');
     selectedMood = mood.dataset.mood;
   });
-
-  // Keyboard support
-  mood.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      mood.click();
-    }
-  });
 });
 
-// Confirm rating
-$('#confirm-rating')?.addEventListener('click', async () => {
+$('#confirm-rating').addEventListener('click', async () => {
   if (!pendingTask) return;
 
-  try {
-    const rating = $$('.rating-stars i.active').length || 5;
+  const rating = $$('.rating-stars .active').length;
+  if (rating === 0) return showError('Please select a rating');
 
-    // Calculate streak multiplier
-    let streakDays = 1;
-    let checkDate = new Date();
-    
-    while (streakDays < 365) {
-      checkDate.setDate(checkDate.getDate() - 1);
-      const dateStr = checkDate.toISOString().slice(0, 10);
-      
-      if (state.history[dateStr]?.[pendingTask.name]?.done) {
-        streakDays++;
-      } else {
-        break;
-      }
-    }
+  const today = getTodayString();
+  let streakDays = 1;
+  let checkDate = new Date();
 
-    const multiplier = streakDays >= 7 ? 1.5 : 1;
-    const earned = Math.round(pendingTask.baseXp * (rating / 5) * multiplier);
-
-    // Update state
-    const today = getTodayString();
-    state.xp += earned;
-    state.totalXp += earned;
-    state.gold += Math.max(0, Math.floor(earned / 10));
-
-    if (!state.history[today]) state.history[today] = {};
-    state.history[today][pendingTask.name] = {
-      done: true,
-      rating,
-      mood: selectedMood,
-      xp: earned,
-      timestamp: Date.now()
-    };
-
-    // Effects
-    playSuccessSound();
-    vibrateSuccess();
-
-    // Level up check
-    while (state.xp >= 100) {
-      state.level++;
-      state.xp -= 100;
-      
-      triggerConfetti();
-      playLevelUpSound();
-      vibrateLevelUp();
-      
-      setTimeout(() => {
-        alert(`🎉 LEVEL UP! Now Level ${state.level}! 🎉`);
-      }, 300);
-    }
-
-    closeModal();
-    renderQuests();
-    await syncData();
-
-  } catch (error) {
-    console.error('Error confirming rating:', error);
-    showError('Failed to save quest completion');
+  while (streakDays < 365) {
+    checkDate.setDate(checkDate.getDate() - 1);
+    const dateStr = checkDate.toISOString().slice(0, 10);
+    if (state.history[dateStr]?.[pendingTask.name]?.done) streakDays++;
+    else break;
   }
+
+  const multiplier = streakDays >= 7 ? 1.5 : 1;
+  const earned = Math.round(pendingTask.baseXp * (rating / 5) * multiplier);
+
+  state.xp += earned;
+  state.totalXp += earned;
+  state.gold += Math.max(0, Math.floor(earned / 10));
+
+  if (!state.history[today]) state.history[today] = {};
+  state.history[today][pendingTask.name] = {
+    done: true,
+    rating,
+    mood: selectedMood,
+    xp: earned,
+    timestamp: Date.now()
+  };
+
+  playSuccessSound();
+  vibrateSuccess();
+
+  while (state.xp >= 100) {
+    state.level++;
+    state.xp -= 100;
+    triggerConfetti();
+    playLevelUpSound();
+    vibrateLevelUp();
+    setTimeout(() => alert(`🎉 LEVEL UP! Now Level ${state.level}! 🎉`), 300);
+  }
+
+  closeModal();
+  renderQuests();
+  await syncData();
 });
 
 function closeModal() {
-  const modal = $('#rating-modal');
-  if (modal) modal.classList.remove('active');
+  $('#rating-modal').classList.remove('active');
   pendingTask = null;
   selectedMood = null;
 }
 
-$('#cancel-rating')?.addEventListener('click', closeModal);
-
-$('#rating-modal')?.addEventListener('click', (e) => {
+$('#cancel-rating').addEventListener('click', closeModal);
+$('#rating-modal').addEventListener('click', (e) => {
   if (e.target.classList.contains('modal-backdrop')) closeModal();
 });
-
-// Close modal on Escape key
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    const modal = $('#rating-modal');
-    if (modal && modal.classList.contains('active')) {
-      closeModal();
-    }
-  }
+  if (e.key === 'Escape' && $('#rating-modal').classList.contains('active')) closeModal();
 });
 
-/* ============================================
-   RENDER QUESTS
-   ============================================ */
+// ============================================
+// RENDER QUESTS
+// ============================================
 
 function renderQuests() {
   updateHeader();
-
   const today = getTodayString();
   const list = $('#habit-list');
-  
+
   if (!list) return;
 
-  // Reset daily quests from yesterday
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().slice(0, 10);
-
   state.quests[currentTab].forEach(quest => {
-    if (quest.repeat && 
-        state.history[yesterdayStr]?.[quest.name]?.done && 
-        !state.history[today]?.[quest.name]) {
-      if (!state.history[today]) state.history[today] = {};
-      state.history[today][quest.name] = { done: false };
+    if (quest.repeat) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().slice(0, 10);
+      if (state.history[yesterdayStr]?.[quest.name]?.done && !state.history[today]?.[quest.name]) {
+        if (!state.history[today]) state.history[today] = {};
+        state.history[today][quest.name] = { done: false };
+      }
     }
   });
 
-  // Render quest list
   list.innerHTML = '';
 
   if (state.quests[currentTab].length === 0) {
@@ -720,7 +575,7 @@ function renderQuests() {
       </div>
       <button 
         class="btn-quest-action" 
-        onclick="window.toggleTask('${sanitizeInput(quest.name)}', ${quest.xp})" 
+        onclick="toggleTask('${sanitizeInput(quest.name)}', ${quest.xp})" 
         ${done ? 'disabled' : ''}
         aria-label="${done ? 'Completed' : 'Complete quest'}"
       >
@@ -732,12 +587,9 @@ function renderQuests() {
   });
 }
 
-// Make toggleTask globally available
-window.toggleTask = toggleTask;
-
-/* ============================================
-   STATISTICS
-   ============================================ */
+// ============================================
+// STATISTICS RENDERING
+// ============================================
 
 function renderStats() {
   renderXPChart();
@@ -757,14 +609,10 @@ function renderXPChart() {
     const date = new Date();
     date.setDate(date.getDate() - i);
     const dateStr = date.toISOString().slice(0, 10);
-    
     labels.push(dateStr.slice(5));
     
     const dayHistory = state.history[dateStr] || {};
-    const dayXP = Object.values(dayHistory).reduce((sum, entry) => {
-      return entry.done ? sum + (entry.xp || 0) : sum;
-    }, 0);
-    
+    const dayXP = Object.values(dayHistory).reduce((sum, entry) => entry.done ? sum + (entry.xp || 0) : sum, 0);
     data.push(dayXP);
   }
 
@@ -777,8 +625,7 @@ function renderXPChart() {
       datasets: [{
         label: 'XP Earned',
         data,
-        borderColor: getComputedStyle(document.documentElement)
-          .getPropertyValue('--accent').trim() || '#00f2ff',
+        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#00f2ff',
         backgroundColor: 'rgba(0, 242, 255, 0.1)',
         tension: 0.4,
         fill: true,
@@ -789,19 +636,10 @@ function renderXPChart() {
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      plugins: {
-        legend: { display: false }
-      },
+      plugins: { legend: { display: false } },
       scales: {
-        y: {
-          beginAtZero: true,
-          ticks: { color: '#fff' },
-          grid: { color: 'rgba(255,255,255,0.1)' }
-        },
-        x: {
-          ticks: { color: '#fff' },
-          grid: { color: 'rgba(255,255,255,0.1)' }
-        }
+        y: { beginAtZero: true, ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+        x: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
       }
     }
   });
@@ -813,23 +651,14 @@ function renderStreak() {
 
   let streak = 0;
   let checkDate = new Date();
-
-  // Check today first
   const today = checkDate.toISOString().slice(0, 10);
-  if (Object.keys(state.history[today] || {}).length > 0) {
-    streak = 1;
-  }
+  if (Object.keys(state.history[today] || {}).length > 0) streak = 1;
 
-  // Check previous days
   while (streak < 365) {
     checkDate.setDate(checkDate.getDate() - 1);
     const dateStr = checkDate.toISOString().slice(0, 10);
-    
-    if (Object.keys(state.history[dateStr] || {}).length > 0) {
-      streak++;
-    } else {
-      break;
-    }
+    if (Object.keys(state.history[dateStr] || {}).length > 0) streak++;
+    else break;
   }
 
   streakEl.innerHTML = `
@@ -843,7 +672,6 @@ function renderBadges() {
   if (!badgesList) return;
 
   const badges = [];
-  
   if (state.totalXp >= 500) badges.push('XP Novice 🏅');
   if (state.totalXp >= 1000) badges.push('XP Master 🏆');
   if (state.totalXp >= 5000) badges.push('Legendary ⭐');
@@ -855,9 +683,7 @@ function renderBadges() {
   if (badges.length === 0) {
     badgesList.innerHTML = '<p class="empty-state">Complete quests to earn badges!</p>';
   } else {
-    badgesList.innerHTML = state.badges
-      .map(badge => `<span class="badge" role="listitem">${sanitizeInput(badge)}</span>`)
-      .join('');
+    badgesList.innerHTML = state.badges.map(badge => `<span class="badge" role="listitem">${sanitizeInput(badge)}</span>`).join('');
   }
 }
 
@@ -873,11 +699,7 @@ function setupWeeklyReport() {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().slice(0, 10);
-      
-      const dayXP = Object.values(state.history[dateStr] || {}).reduce((sum, entry) => {
-        return entry.done ? sum + (entry.xp || 0) : sum;
-      }, 0);
-      
+      const dayXP = Object.values(state.history[dateStr] || {}).reduce((sum, entry) => entry.done ? sum + (entry.xp || 0) : sum, 0);
       totalXP += dayXP;
       report += `${date.toLocaleDateString()}: ${dayXP} XP\n`;
     }
@@ -891,9 +713,9 @@ function setupWeeklyReport() {
   };
 }
 
-/* ============================================
-   SHOP
-   ============================================ */
+// ============================================
+// SHOP RENDERING
+// ============================================
 
 function renderShop() {
   const shopItems = $('#shop-items');
@@ -906,53 +728,47 @@ function renderShop() {
     { name: 'Mage Avatar', cost: 250, avatar: '🧙‍♂️', icon: '✨' }
   ];
 
-  shopItems.innerHTML = items
-    .map(item => `
-      <div class="shop-item glass" role="listitem">
-        <div class="shop-item-header">
-          <span class="shop-item-icon">${item.icon}</span>
-          <div class="shop-item-info">
-            <div class="shop-item-name">${sanitizeInput(item.name)}</div>
-            <div class="shop-item-cost">${item.cost} 🪙</div>
-          </div>
+  shopItems.innerHTML = items.map(item => `
+    <div class="shop-item glass" role="listitem">
+      <div class="shop-item-header">
+        <span class="shop-item-icon">${item.icon}</span>
+        <div class="shop-item-info">
+          <div class="shop-item-name">${sanitizeInput(item.name)}</div>
+          <div class="shop-item-cost">${item.cost} 🪙</div>
         </div>
-        <button 
-          onclick="buyItem('${item.avatar}', ${item.cost})"
-          class="btn-primary"
-          ${state.gold < item.cost ? 'disabled' : ''}
-          aria-label="Buy ${item.name}"
-        >
-          ${state.gold >= item.cost ? 'Buy Now' : 'Locked'}
-        </button>
       </div>
-    `)
-    .join('');
+      <button 
+        onclick="buyItem('${item.avatar}', ${item.cost})"
+        class="btn-primary"
+        ${state.gold < item.cost ? 'disabled' : ''}
+        aria-label="Buy ${item.name}"
+      >
+        ${state.gold >= item.cost ? 'Buy Now' : 'Locked'}
+      </button>
+    </div>
+  `).join('');
 }
 
 window.buyItem = (avatar, cost) => {
   if (state.gold >= cost) {
     state.gold -= cost;
     state.avatar = avatar;
-    
     updateHeader();
     syncData();
-    
     playSuccessSound();
     alert('🎉 Purchase successful! Avatar updated!');
-    
     renderShop();
   } else {
     alert('❌ Not enough gold! Complete more quests to earn gold.');
   }
 };
 
-/* ============================================
-   DATA SYNCHRONIZATION
-   ============================================ */
+// ============================================
+// DATA SYNCHRONIZATION
+// ============================================
 
 async function syncData() {
   if (!user || isSyncing) return;
-
   isSyncing = true;
   
   try {
@@ -972,139 +788,85 @@ async function syncData() {
   }
 }
 
-/* ============================================
-   AUTHENTICATION
-   ============================================ */
+// ============================================
+// AUTHENTICATION HANDLERS
+// ============================================
 
 onAuthStateChanged(auth, async (usr) => {
   user = usr;
 
   if (usr) {
-    try {
-      showLoading(true);
+    showLoading(true);
+    $('#login-screen').classList.add('hidden');
+    $('#app-screen').classList.remove('hidden');
 
-      $('#login-screen')?.classList.add('hidden');
-      $('#app-screen')?.classList.remove('hidden');
+    $('#user-name').textContent = usr.displayName?.split(' ')[0] || 'HERO';
 
-      const userNameEl = $('#user-name');
-      if (userNameEl) {
-        userNameEl.textContent = usr.displayName?.split(' ')[0] || 'HERO';
-      }
-
-      // Load user data
-      const userDoc = await getDoc(doc(db, "users", usr.uid));
-      
-      if (userDoc.exists()) {
-        state = { ...state, ...userDoc.data() };
-      } else {
-        // Initialize default quests for new users
-        state.quests = {
-          physical: [
-            { name: "100 Pushups", xp: 20, repeat: true },
-            { name: "30min Cardio", xp: 25, repeat: true }
-          ],
-          mental: [
-            { name: "Read 10 Pages", xp: 15, repeat: true },
-            { name: "Learn Something New", xp: 20, repeat: true }
-          ],
-          spiritual: [
-            { name: "Meditate 10min", xp: 10, repeat: true },
-            { name: "Gratitude Journal", xp: 15, repeat: true }
-          ],
-          blights: [
-            { name: "Relapse", xp: -50, repeat: false },
-            { name: "Procrastination", xp: -20, repeat: false }
-          ]
-        };
-        await syncData();
-      }
-
-      // Initialize UI
-      switchTab('physical');
-      renderQuests();
-
-      // Setup leaderboard listener
-      const leaderboardQuery = query(
-        collection(db, "leaderboard"),
-        orderBy("xp", "desc"),
-        limit(10)
-      );
-
-      onSnapshot(leaderboardQuery, (snapshot) => {
-        const scoreboard = $('#scoreboard-list');
-        if (!scoreboard) return;
-
-        if (snapshot.empty) {
-          scoreboard.innerHTML = '<p class="empty-state">No players yet. Be the first!</p>';
-          return;
-        }
-
-        scoreboard.innerHTML = '';
-        snapshot.forEach((doc, index) => {
-          const data = doc.data();
-          const position = index + 1;
-          const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '';
-          
-          scoreboard.innerHTML += `
-            <div class="leaderboard-item" role="listitem">
-              <span>${medal} ${position}. ${sanitizeInput(data.name || 'Hero')} (Lvl ${data.level || 1})</span>
-              <span class="leaderboard-xp">${data.xp || 0} XP</span>
-            </div>
-          `;
-        });
-      });
-
-    } catch (error) {
-      console.error('Failed to load user data:', error);
-      showError('Failed to load your data. Please try again.');
-    } finally {
-      showLoading(false);
+    const userDoc = await getDoc(doc(db, "users", usr.uid));
+    
+    if (userDoc.exists()) {
+      state = { ...state, ...userDoc.data() };
+    } else {
+      state.quests = {
+        physical: [{ name: "100 Pushups", xp: 20, repeat: true }, { name: "30min Cardio", xp: 25, repeat: true }],
+        mental: [{ name: "Read 10 Pages", xp: 15, repeat: true }, { name: "Learn Something New", xp: 20, repeat: true }],
+        spiritual: [{ name: "Meditate 10min", xp: 10, repeat: true }, { name: "Gratitude Journal", xp: 15, repeat: true }],
+        blights: [{ name: "Relapse", xp: -50, repeat: false }, { name: "Procrastination", xp: -20, repeat: false }]
+      };
+      await syncData();
     }
 
-  } else {
-    // User not logged in - show login screen
+    switchTab('physical');
+    renderQuests();
+
+    const leaderboardQuery = query(collection(db, "leaderboard"), orderBy("xp", "desc"), limit(10));
+    onSnapshot(leaderboardQuery, (snapshot) => {
+      const scoreboard = $('#scoreboard-list');
+      if (!scoreboard) return;
+
+      if (snapshot.empty) {
+        scoreboard.innerHTML = '<p class="empty-state">No players yet. Be the first!</p>';
+        return;
+      }
+
+      scoreboard.innerHTML = '';
+      snapshot.forEach((doc, index) => {
+        const data = doc.data();
+        const position = index + 1;
+        const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '';
+        scoreboard.innerHTML += `
+          <div class="leaderboard-item" role="listitem">
+            <span>${medal} ${position}. ${sanitizeInput(data.name || 'Hero')} (Lvl ${data.level || 1})</span>
+            <span class="leaderboard-xp">${data.xp || 0} XP</span>
+          </div>
+        `;
+      });
+    });
+
     showLoading(false);
-    $('#login-screen')?.classList.remove('hidden');
-    $('#app-screen')?.classList.add('hidden');
+  } else {
+    showLoading(false);
+    $('#login-screen').classList.remove('hidden');
+    $('#app-screen').classList.add('hidden');
   }
 });
 
-// Make sure login screen is visible on initial load
-window.addEventListener('DOMContentLoaded', () => {
-  console.log('DOM loaded, ensuring login screen is visible');
-  const loginScreen = $('#login-screen');
-  const appScreen = $('#app-screen');
-  
-  if (loginScreen && appScreen) {
-    // Initially show login screen
-    loginScreen.classList.remove('hidden');
-    appScreen.classList.add('hidden');
-  }
-});
-
-// Login handler
-$('#google-login-btn')?.addEventListener('click', async () => {
+$('#google-login-btn').addEventListener('click', async () => {
   try {
     showLoading(true);
     await signInWithPopup(auth, provider);
   } catch (error) {
     console.error('Login failed:', error);
     let message = 'Login failed. Please try again.';
-    
-    if (error.code === 'auth/popup-closed-by-user') {
-      message = 'Login cancelled.';
-    } else if (error.code === 'auth/network-request-failed') {
-      message = 'Network error. Please check your connection.';
-    }
-    
+    if (error.code === 'auth/popup-closed-by-user') message = 'Login cancelled.';
+    else if (error.code === 'auth/network-request-failed') message = 'Network error. Please check your connection.';
     showError(message);
   } finally {
     showLoading(false);
   }
 });
 
-// Logout handler
-$('#logout-btn')?.addEventListener('click', async () => {
+$('#logout-btn').addEventListener('click', async () => {
   if (confirm('Are you sure you want to logout?')) {
     try {
       await signOut(auth);
@@ -1115,12 +877,11 @@ $('#logout-btn')?.addEventListener('click', async () => {
   }
 });
 
-/* ============================================
-   KEYBOARD SHORTCUTS
-   ============================================ */
+// ============================================
+// KEYBOARD SHORTCUTS
+// ============================================
 
 document.addEventListener('keydown', (e) => {
-  // Quick navigation (Alt + number)
   if (e.altKey && !e.ctrlKey && !e.metaKey) {
     const tabs = ['physical', 'mental', 'spiritual', 'blights', 'stats', 'shop'];
     const num = parseInt(e.key);
@@ -1130,9 +891,5 @@ document.addEventListener('keydown', (e) => {
     }
   }
 });
-
-/* ============================================
-   INITIALIZATION
-   ============================================ */
 
 console.log('Hero\'s Quest initialized successfully!');
