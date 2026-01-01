@@ -41,7 +41,23 @@
 
   <!-- Main App Container -->
   <div id="app" class="container hidden">
-    <!-- Header with User Info and Progress -->
+    <aside class="sidebar glass">
+    <div class="brand">HERO'S QUEST</div>
+    <nav class="side-menu">
+        <button onclick="switchTab('physical')" class="nav-item">Physical</button>
+        <button onclick="switchTab('mental')" class="nav-item">Mental</button>
+        <button onclick="switchTab('spiritual')" class="nav-item">Spiritual</button>
+        <button onclick="switchTab('blights')" class="nav-item danger">Blights</button>
+        <button onclick="switchTab('stats')" class="nav-item">Archive</button>
+    </nav>
+    <div class="forge-panel">
+        <h4>Forge Quest</h4>
+        <input id="new-name" placeholder="Quest name...">
+        <input id="new-xp" type="number" placeholder="XP">
+        <button onclick="addNewQuest()" class="btn-add">Forge</button>
+    </div>
+    <button id="logout-btn" class="btn-exit">End Cycle</button>
+</aside>!-- Header with User Info and Progress --
     <header class="glass">
       <div class="user-row">
         <div class="user-info">
