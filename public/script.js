@@ -850,6 +850,16 @@ document.getElementById('google-login-btn')?.addEventListener('click', async () 
         console.error("Login failed:", error);
     }
 });
+// Add to the bottom of script.js
+$('toggle-panel-btn')?.addEventListener('click', () => {
+    const panel = $('add-panel');
+    const isHidden = panel.classList.toggle('hidden');
+    
+    // Optional: Change button text based on state
+    $('toggle-panel-btn').innerHTML = isHidden 
+        ? '<i class="fas fa-plus-circle"></i> ADD NEW QUEST' 
+        : '<i class="fas fa-times-circle"></i> CLOSE';
+});
 // ========================================
 // INITIALIZATION COMPLETE
 // ========================================

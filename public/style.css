@@ -1049,3 +1049,42 @@ header {
     position: relative;
   }
 }
+/* Add these lines to style.css */
+.hidden {
+    display: none !important;
+}
+
+#add-panel {
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+#toggle-add-btn {
+    color: var(--accent);
+    font-family: var(--font-display);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+}
+
+/* Add to style.css */
+#add-panel {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: top;
+}
+
+#add-panel.hidden {
+    display: none !important;
+    opacity: 0;
+    transform: scaleY(0);
+}
+
+#toggle-panel-btn {
+    margin-bottom: 15px;
+    color: var(--accent);
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+}
