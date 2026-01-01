@@ -46,19 +46,15 @@ body {
   height: 100%;
   display: block;
 }
-
-/* Container */
-.container { 
-  max-width: 500px; 
-  margin: 0 auto; 
-  padding: 16px; 
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  z-index: 1;
+/* Replace your current .container with this */
+.container {
+    display: flex;
+    flex-direction: column; /* Mobile first: stack everything */
+    min-height: 100vh;
+    max-width: 100%; /* Allow it to fill the screen */
+    margin: 0;
+    padding: 0;
 }
-
 /* Glass Effect */
 .glass { 
   background: var(--glass);
@@ -1087,4 +1083,41 @@ header {
     font-weight: 800;
     letter-spacing: 1px;
     cursor: pointer;
+}
+
+/* Add this Media Query at the bottom of style.css */
+@media (min-width: 1024px) {
+    .container {
+        flex-direction: row; /* Desktop: Sidebar on left, Content on right */
+    }
+
+    .main-nav {
+        width: 280px; /* Sidebar width */
+        height: 100vh;
+        flex-direction: column;
+        position: sticky;
+        top: 0;
+        padding: 40px 20px;
+        border-right: 1px solid var(--border);
+    }
+
+    #quest-area, #stats-area {
+        flex: 1; /* Main content takes up remaining space */
+        padding: 40px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .content-wrapper {
+        flex: 1;
+        overflow-y: auto;
+        height: 100vh;
+    }
+
+    .main-nav button {
+        width: 100%; /* Buttons fill sidebar width */
+        justify-content: flex-start;
+        padding: 15px 25px;
+        margin-bottom: 10px;
+        border-radius: 12px;
+    }
 }

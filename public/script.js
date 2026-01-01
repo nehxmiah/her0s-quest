@@ -402,6 +402,8 @@ $('confirm-btn')?.addEventListener('click', async () => {
     state.xp += earnedXP;
     state.totalXp += earnedXP;
     state.gold += Math.max(0, Math.floor(earnedXP / 10));
+    const multiplier = 1 / (1 + (state.level * 0.05));
+    const fairEarnedXP = Math.round(earnedXP * multiplier);
     
     // Record in history
     if (!state.history[today]) state.history[today] = {};
