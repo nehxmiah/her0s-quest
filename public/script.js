@@ -831,6 +831,25 @@ window.toggleAddPanel = () => {
     icon.style.transform = panel.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(45deg)';
     icon.style.transition = 'transform 0.3s ease';
 };
+/// Ensure the Add Panel starts hidden
+document.getElementById('add-panel')?.classList.add('hidden');
+
+// 1. Toggle Button Logic
+// Make sure you have a button with id="toggle-add-btn" in your HTML
+document.getElementById('toggle-add-btn')?.addEventListener('click', () => {
+    const panel = document.getElementById('add-panel');
+    panel.classList.toggle('hidden');
+});
+
+// 2. Start Redemption (Login) Button Fix
+// This ensures the button works even if Firebase is slow to load
+document.getElementById('google-login-btn')?.addEventListener('click', async () => {
+    try {
+        await signInWithPopup(auth, provider);
+    } catch (error) {
+        console.error("Login failed:", error);
+    }
+});
 // ========================================
 // INITIALIZATION COMPLETE
 // ========================================
