@@ -196,12 +196,14 @@ button:focus-visible {
    LOGIN SCREEN
    ============================================ */
 
-.login-container {
+#login-screen {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: var(--spacing-md);
+  position: relative;
+  z-index: 10;
 }
 
 .login-card {
@@ -209,6 +211,8 @@ button:focus-visible {
   width: 100%;
   padding: var(--spacing-xl);
   text-align: center;
+  position: relative;
+  z-index: 11;
 }
 
 .login-title {

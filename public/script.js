@@ -1062,8 +1062,23 @@ onAuthStateChanged(auth, async (usr) => {
     }
 
   } else {
+    // User not logged in - show login screen
+    showLoading(false);
     $('#login-screen')?.classList.remove('hidden');
     $('#app-screen')?.classList.add('hidden');
+  }
+});
+
+// Make sure login screen is visible on initial load
+window.addEventListener('DOMContentLoaded', () => {
+  console.log('DOM loaded, ensuring login screen is visible');
+  const loginScreen = $('#login-screen');
+  const appScreen = $('#app-screen');
+  
+  if (loginScreen && appScreen) {
+    // Initially show login screen
+    loginScreen.classList.remove('hidden');
+    appScreen.classList.add('hidden');
   }
 });
 
