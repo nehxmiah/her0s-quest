@@ -113,7 +113,20 @@ class AnimatedBackground {
     this.ctx = canvas.getContext('2d');
     this.width = canvas.width = window.innerWidth;
     this.height = canvas.height = window.innerHeight;
+    this.time = 0;
     this.color = [0, 242, 255]; // Cyan default
+    this.particles = [];
+    
+    // Create particles
+    for (let i = 0; i < 50; i++) {
+      this.particles.push({
+        x: Math.random() * this.width,
+        y: Math.random() * this.height,
+        size: Math.random() * 3 + 1,
+        speedX: (Math.random() - 0.5) * 0.5,
+        speedY: (Math.random() - 0.5) * 0.5
+      });
+    }
     
     this.animate();
     
@@ -127,13 +140,40 @@ class AnimatedBackground {
     requestAnimationFrame(() => this.animate());
     if (!this.ctx) return;
     
-    const gradient = this.ctx.createLinearGradient(0, 0, this.width, this.height);
+    this.time += 0.01;
+    
+    // Create animated gradient
+    const gradient = this.ctx.createLinearGradient(
+      0, 
+      0, 
+      this.width * Math.cos(this.time * 0.5), 
+      this.height * Math.sin(this.time * 0.5)
+    );
     const [red, green, blue] = this.color;
     gradient.addColorStop(0, `rgb(${red}, ${green}, ${blue})`);
     gradient.addColorStop(1, 'rgb(0, 0, 0)');
     
     this.ctx.fillStyle = gradient;
     this.ctx.fillRect(0, 0, this.width, this.height);
+    
+    // Draw and update particles
+    this.particles.forEach(particle => {
+      // Update position
+      particle.x += particle.speedX;
+      particle.y += particle.speedY;
+      
+      // Wrap around screen
+      if (particle.x < 0) particle.x = this.width;
+      if (particle.x > this.width) particle.x = 0;
+      if (particle.y < 0) particle.y = this.height;
+      if (particle.y > this.height) particle.y = 0;
+      
+      // Draw particle
+      this.ctx.fillStyle = `rgba(${red}, ${green}, ${blue}, ${0.3 + Math.sin(this.time * 2 + particle.x) * 0.3})`;
+      this.ctx.beginPath();
+      this.ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+      this.ctx.fill();
+    });
   }
   
   setColor(colorArray) {
