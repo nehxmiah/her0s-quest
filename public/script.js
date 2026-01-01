@@ -1,7 +1,7 @@
 // script.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
 // ============================================
 // FIREBASE CONFIGURATION
@@ -65,7 +65,8 @@ function showError(message, containerId = 'login-error') {
 }
 
 function showLoading(show = true) {
-  $('#loading-spinner')?.classList.toggle('hidden', !show);
+  const spinner = $('#loading-spinner');
+  if (spinner) spinner.classList.toggle('hidden', !show);
 }
 
 function sanitizeInput(input) {
@@ -348,7 +349,21 @@ async function loadQuote() {
   const fallbackQuotes = [
     { q: "The only way to do great work is to love what you do.", a: "Steve Jobs" },
     { q: "Success is not final, failure is not fatal: it is the courage to continue that counts.", a: "Winston Churchill" },
-    // ... (add more fallbacks as needed)
+    { q: "Believe you can and you're halfway there.", a: "Theodore Roosevelt" },
+    { q: "The future belongs to those who believe in the beauty of their dreams.", a: "Eleanor Roosevelt" },
+    { q: "It does not matter how slowly you go as long as you do not stop.", a: "Confucius" },
+    { q: "Everything you've ever wanted is on the other side of fear.", a: "George Addair" },
+    { q: "Success is not how high you have climbed, but how you make a positive difference to the world.", a: "Roy T. Bennett" },
+    { q: "Don't watch the clock; do what it does. Keep going.", a: "Sam Levenson" },
+    { q: "The only impossible journey is the one you never begin.", a: "Tony Robbins" },
+    { q: "Small daily improvements are the key to staggering long-term results.", a: "Unknown" },
+    { q: "Discipline is choosing between what you want now and what you want most.", a: "Abraham Lincoln" },
+    { q: "You don't have to be great to start, but you have to start to be great.", a: "Zig Ziglar" },
+    { q: "The difference between who you are and who you want to be is what you do.", a: "Unknown" },
+    { q: "Your limitation—it's only your imagination.", a: "Unknown" },
+    { q: "Push yourself, because no one else is going to do it for you.", a: "Unknown" },
+    { q: "Great things never come from comfort zones.", a: "Unknown" },
+    { q: "Dream it. Wish it. Do it.", a: "Unknown" },
   ];
 
   try {
@@ -796,54 +811,59 @@ onAuthStateChanged(auth, async (usr) => {
   user = usr;
 
   if (usr) {
-    showLoading(true);
-    $('#login-screen').classList.add('hidden');
-    $('#app-screen').classList.remove('hidden');
+    try {
+      showLoading(true);
+      $('#login-screen').classList.add('hidden');
+      $('#app-screen').classList.remove('hidden');
 
-    $('#user-name').textContent = usr.displayName?.split(' ')[0] || 'HERO';
+      $('#user-name').textContent = usr.displayName?.split(' ')[0] || 'HERO';
 
-    const userDoc = await getDoc(doc(db, "users", usr.uid));
-    
-    if (userDoc.exists()) {
-      state = { ...state, ...userDoc.data() };
-    } else {
-      state.quests = {
-        physical: [{ name: "100 Pushups", xp: 20, repeat: true }, { name: "30min Cardio", xp: 25, repeat: true }],
-        mental: [{ name: "Read 10 Pages", xp: 15, repeat: true }, { name: "Learn Something New", xp: 20, repeat: true }],
-        spiritual: [{ name: "Meditate 10min", xp: 10, repeat: true }, { name: "Gratitude Journal", xp: 15, repeat: true }],
-        blights: [{ name: "Relapse", xp: -50, repeat: false }, { name: "Procrastination", xp: -20, repeat: false }]
-      };
-      await syncData();
-    }
-
-    switchTab('physical');
-    renderQuests();
-
-    const leaderboardQuery = query(collection(db, "leaderboard"), orderBy("xp", "desc"), limit(10));
-    onSnapshot(leaderboardQuery, (snapshot) => {
-      const scoreboard = $('#scoreboard-list');
-      if (!scoreboard) return;
-
-      if (snapshot.empty) {
-        scoreboard.innerHTML = '<p class="empty-state">No players yet. Be the first!</p>';
-        return;
+      const userDoc = await getDoc(doc(db, "users", usr.uid));
+      
+      if (userDoc.exists()) {
+        state = { ...state, ...userDoc.data() };
+      } else {
+        state.quests = {
+          physical: [{ name: "100 Pushups", xp: 20, repeat: true }, { name: "30min Cardio", xp: 25, repeat: true }],
+          mental: [{ name: "Read 10 Pages", xp: 15, repeat: true }, { name: "Learn Something New", xp: 20, repeat: true }],
+          spiritual: [{ name: "Meditate 10min", xp: 10, repeat: true }, { name: "Gratitude Journal", xp: 15, repeat: true }],
+          blights: [{ name: "Relapse", xp: -50, repeat: false }, { name: "Procrastination", xp: -20, repeat: false }]
+        };
+        await syncData();
       }
 
-      scoreboard.innerHTML = '';
-      snapshot.forEach((doc, index) => {
-        const data = doc.data();
-        const position = index + 1;
-        const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '';
-        scoreboard.innerHTML += `
-          <div class="leaderboard-item" role="listitem">
-            <span>${medal} ${position}. ${sanitizeInput(data.name || 'Hero')} (Lvl ${data.level || 1})</span>
-            <span class="leaderboard-xp">${data.xp || 0} XP</span>
-          </div>
-        `;
-      });
-    });
+      switchTab('physical');
+      renderQuests();
 
-    showLoading(false);
+      const leaderboardQuery = query(collection(db, "leaderboard"), orderBy("xp", "desc"), limit(10));
+      onSnapshot(leaderboardQuery, (snapshot) => {
+        const scoreboard = $('#scoreboard-list');
+        if (!scoreboard) return;
+
+        if (snapshot.empty) {
+          scoreboard.innerHTML = '<p class="empty-state">No players yet. Be the first!</p>';
+          return;
+        }
+
+        scoreboard.innerHTML = '';
+        snapshot.forEach((doc, index) => {
+          const data = doc.data();
+          const position = index + 1;
+          const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '';
+          scoreboard.innerHTML += `
+            <div class="leaderboard-item" role="listitem">
+              <span>${medal} ${position}. ${sanitizeInput(data.name || 'Hero')} (Lvl ${data.level || 1})</span>
+              <span class="leaderboard-xp">${data.xp || 0} XP</span>
+            </div>
+          `;
+        });
+      });
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+      showError('Failed to load your data. Please try again.');
+    } finally {
+      showLoading(false);
+    }
   } else {
     showLoading(false);
     $('#login-screen').classList.remove('hidden');
