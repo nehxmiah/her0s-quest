@@ -21,9 +21,10 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body data-theme="login">
+  <!-- Animated Background Canvas -->
   <canvas id="bg" aria-hidden="true"></canvas>
 
-  <!-- Loading -->
+  <!-- Loading Spinner -->
   <div id="loading" class="spinner hidden" role="status">
     <div class="spinner-ring"></div>
   </div>
@@ -38,9 +39,9 @@
     <div id="error" class="error hidden" role="alert"></div>
   </div>
 
-  <!-- Main App -->
+  <!-- Main App Container -->
   <div id="app" class="container hidden">
-    <!-- Header -->
+    <!-- Header with User Info and Progress -->
     <header class="glass">
       <div class="user-row">
         <div class="user-info">
@@ -51,15 +52,18 @@
           <i class="fas fa-sign-out-alt"></i>
         </button>
       </div>
+      
       <div id="level" class="level">LVL 1</div>
+      
       <div class="xp-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
         <div id="xp-fill"></div>
         <span id="xp-text">0 / 100 XP</span>
       </div>
+      
       <div class="gold">Gold: <span id="gold">0</span> 🪙</div>
     </header>
 
-    <!-- Navigation -->
+    <!-- Category Navigation Tabs -->
     <nav class="nav">
       <button data-tab="physical" class="active">
         <i class="fas fa-dumbbell"></i><span>PHY</span>
@@ -68,7 +72,7 @@
         <i class="fas fa-brain"></i><span>MEN</span>
       </button>
       <button data-tab="spiritual">
-        <i class="fas fa-om"></i><span>SPI</span>
+        <i class="fas fa-cross"></i><span>SPI</span>
       </button>
       <button data-tab="blights">
         <i class="fas fa-skull"></i><span>BLT</span>
@@ -81,12 +85,13 @@
       </button>
     </nav>
 
-    <!-- Quests -->
+    <!-- Quests Section -->
     <main id="quests">
       <h2 id="title">PHYSICAL</h2>
       <div id="quote" class="quote"></div>
       <div id="list"></div>
 
+      <!-- Add New Quest Panel -->
       <div id="add-panel" class="glass">
         <input id="quest-name" type="text" placeholder="Quest name..." maxlength="50">
         <input id="quest-xp" type="number" placeholder="XP" min="-100" max="500">
@@ -100,10 +105,11 @@
       </div>
     </main>
 
-    <!-- Stats -->
+    <!-- Stats Section -->
     <section id="stats" class="hidden">
       <h2>YOUR LEGEND</h2>
       
+      <!-- Stats Summary Cards -->
       <div class="stats-grid">
         <div class="stat-card glass">
           <div class="stat-icon">📊</div>
@@ -127,33 +133,38 @@
         </div>
       </div>
 
+      <!-- Weekly Progress Chart -->
       <div class="glass">
         <h3><i class="fas fa-chart-line"></i> Weekly Progress</h3>
         <canvas id="chart"></canvas>
       </div>
 
+      <!-- Badges Section -->
       <div class="glass">
         <h3><i class="fas fa-medal"></i> Badges</h3>
         <div id="badges"></div>
       </div>
 
+      <!-- Leaderboard Section -->
       <div class="glass">
         <h3><i class="fas fa-crown"></i> Leaderboard</h3>
         <div id="leaderboard"></div>
       </div>
     </section>
 
-    <!-- Shop -->
+    <!-- Shop Section -->
     <section id="shop" class="glass hidden">
       <h2>Hero's Shop</h2>
       <div id="shop-items"></div>
     </section>
 
-    <!-- Rating Modal -->
+    <!-- Quest Rating Modal -->
     <div id="modal" class="modal hidden" role="dialog">
       <div class="modal-content glass">
         <h3 id="modal-title">Rate Quest</h3>
         <p>How well did you complete this quest?</p>
+        
+        <!-- Star Rating -->
         <div class="stars">
           <i class="far fa-star" data-value="1"></i>
           <i class="far fa-star" data-value="2"></i>
@@ -161,11 +172,15 @@
           <i class="far fa-star" data-value="4"></i>
           <i class="far fa-star" data-value="5"></i>
         </div>
+        
+        <!-- Mood Selection -->
         <div class="moods">
           <span data-mood="happy">😊</span>
           <span data-mood="neutral">😐</span>
           <span data-mood="sad">😔</span>
         </div>
+        
+        <!-- Action Buttons -->
         <div class="modal-btns">
           <button id="cancel-btn" class="btn-text">Cancel</button>
           <button id="confirm-btn" class="btn-primary">Confirm</button>
