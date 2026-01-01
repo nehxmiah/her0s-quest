@@ -1,15 +1,9 @@
-/**
- * Hero's Quest - Production Script
- * Improved Structure, Performance, and Error Handling
- */
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 class HerosQuest {
   constructor() {
-    // SECURITY NOTE: In production, use environment variables for these values.
     this.firebaseConfig = {
       apiKey: "AIzaSyBDTTyEWFBam2EEWK4X2VV5E-wUJx10V38",
       authDomain: "her0s-quest.firebaseapp.com",
@@ -20,11 +14,11 @@ class HerosQuest {
     };
 
     this.state = {
-      xp: 0, level: 1, gold: 0,
-      quests: { physical: [], mental: [], spiritual: [], blights: [] },
-      history: {},
       user: null,
-      currentTab: 'physical'
+      currentTab: 'physical',
+      quests: { physical: [], mental: [], spiritual: [] },
+      xp: 0,
+      pendingDelete: null
     };
 
     this.init();
@@ -36,137 +30,145 @@ class HerosQuest {
     this.db = getFirestore(this.app);
     this.provider = new GoogleAuthProvider();
 
-    this.bindEvents();
-    this.setupAuthListener();
-    this.initVisuals();
+    this.setupEventListeners();
+    this.handleAuth();
   }
 
-  // --- Core Methods ---
-
-  bindEvents() {
-    // Navigation (Event Delegation)
-    document.querySelector('.sidebar-nav').addEventListener('click', (e) => {
-      const btn = e.target.closest('.nav-btn');
-      if (btn) this.switchTab(btn.dataset.tab);
+  setupEventListeners() {
+    // Tab Switching
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
     });
 
-    // Quest Management
-    document.getElementById('add-quest-btn')?.addEventListener('click', () => this.addNewQuest());
-    document.getElementById('toggle-add-quest')?.addEventListener('click', this.toggleAddForm);
-    
-    // Auth
-    document.getElementById('google-login-btn').addEventListener('click', () => this.login());
-    document.getElementById('logout-btn').addEventListener('click', () => this.logout());
+    // Modal Controls
+    document.getElementById('open-add-modal').onclick = () => this.toggleModal('add-modal', true);
+    document.querySelectorAll('.close-modal').forEach(b => b.onclick = () => this.toggleModal('add-modal', false));
 
-    // Window Resize
-    window.addEventListener('resize', this.debounce(() => {
-      if (this.engine) this.engine.handleResize();
-    }, 250));
+    // Quest Submission
+    document.getElementById('add-quest-form').onsubmit = (e) => this.handleAddQuest(e);
+
+    // Delete Confirmation
+    document.getElementById('confirm-delete').onclick = () => this.executeDelete();
+    document.getElementById('cancel-delete').onclick = () => this.toggleModal('confirm-modal', false);
+
+    // Auth
+    document.getElementById('google-login-btn').onclick = () => signInWithPopup(this.auth, this.provider);
+    document.getElementById('logout-btn').onclick = () => signOut(this.auth);
   }
 
-  async login() {
-    try {
-      this.showLoading(true);
-      await signInWithPopup(this.auth, this.provider);
-    } catch (error) {
-      this.notify('Login failed. Please try again.', 'error');
-    } finally {
-      this.showLoading(false);
+  handleAuth() {
+    onAuthStateChanged(this.auth, async (user) => {
+      if (user) {
+        this.state.user = user;
+        await this.syncData();
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('app-screen').classList.remove('hidden');
+        this.renderAll();
+      } else {
+        document.getElementById('app-screen').classList.add('hidden');
+        document.getElementById('login-screen').classList.remove('hidden');
+      }
+    });
+  }
+
+  async syncData() {
+    const userDoc = await getDoc(doc(this.db, "users", this.state.user.uid));
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      this.state.quests = data.quests || this.state.quests;
+      this.state.xp = data.xp || 0;
+    } else {
+      await setDoc(doc(this.db, "users", this.state.user.uid), this.state);
     }
   }
 
-  async logout() {
-    const confirmed = await this.confirmAction('Are you sure you want to log out?');
-    if (confirmed) await signOut(this.auth);
+  switchTab(tabId) {
+    this.state.currentTab = tabId;
+    document.body.setAttribute('data-theme', tabId);
+    document.getElementById('view-title').innerText = `${tabId.toUpperCase()} JOURNEY`;
+
+    document.querySelectorAll('.tab-view').forEach(view => view.classList.add('hidden'));
+    document.getElementById(tabId === 'stats' ? 'stats-view' : tabId === 'calendar' ? 'calendar-view' : 'quest-view').classList.remove('hidden');
+
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabId));
+
+    if (tabId === 'calendar') this.renderCalendar();
+    this.renderQuests();
   }
 
-  // --- UI Logic ---
+  async handleAddQuest(e) {
+    e.preventDefault();
+    const name = document.getElementById('quest-name').value;
+    const xp = parseInt(document.getElementById('quest-xp').value);
 
-  switchTab(tab) {
-    this.state.currentTab = tab;
-    document.body.setAttribute('data-theme', tab);
-    
-    // Update active state
-    document.querySelectorAll('.nav-btn').forEach(b => 
-      b.classList.toggle('active', b.dataset.tab === tab)
-    );
+    const newQuest = { id: Date.now(), name, xp, completed: false };
+    this.state.quests[this.state.currentTab].push(newQuest);
 
-    document.getElementById('view-title').textContent = `${tab.toUpperCase()} QUESTS`;
+    await this.saveState();
+    this.toggleModal('add-modal', false);
     this.renderQuests();
-    
-    // Update background color if engine exists
-    if (this.engine) this.engine.updateTheme(tab);
+    e.target.reset();
+  }
+
+  requestDelete(id) {
+    this.state.pendingDelete = id;
+    this.toggleModal('confirm-modal', true);
+  }
+
+  async executeDelete() {
+    const category = this.state.currentTab;
+    this.state.quests[category] = this.state.quests[category].filter(q => q.id !== this.state.pendingDelete);
+    await this.saveState();
+    this.toggleModal('confirm-modal', false);
+    this.renderQuests();
   }
 
   renderQuests() {
     const container = document.getElementById('quest-list');
-    const items = this.state.quests[this.state.currentTab] || [];
+    const quests = this.state.quests[this.state.currentTab] || [];
     
-    if (items.length === 0) {
-      container.innerHTML = `<p class="empty-state">No quests active. Add one above!</p>`;
-      return;
-    }
-
-    container.innerHTML = items.map(q => `
-      <div class="quest-item glass slide-in">
+    container.innerHTML = quests.map(q => `
+      <div class="quest-item glass">
         <div class="quest-info">
-          <h3>${this.sanitize(q.name)}</h3>
-          <span class="xp-badge">+${q.xp} XP</span>
+          <h3>${q.name}</h3>
+          <p>Reward: ${q.xp} XP</p>
         </div>
-        <button onclick="app.completeQuest('${q.name}', ${q.xp})" class="btn-complete">
-          <i class="fas fa-check"></i>
+        <button class="btn-delete" onclick="window.app.requestDelete(${q.id})" aria-label="Delete quest">
+          <i class="fas fa-times"></i>
         </button>
       </div>
     `).join('');
   }
 
-  // --- Utilities ---
+  renderCalendar() {
+    const container = document.getElementById('calendar-widget');
+    const date = new Date();
+    const month = date.toLocaleString('default', { month: 'long' });
+    const days = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 
-  sanitize(str) {
-    const temp = document.createElement('div');
-    temp.textContent = str;
-    return temp.innerHTML;
+    let html = `<h4>${month} ${date.getFullYear()}</h4><div class="calendar-grid">`;
+    for (let i = 1; i <= days; i++) {
+      const active = i === date.getDate() ? 'today' : '';
+      html += `<div class="cal-day ${active}">${i}</div>`;
+    }
+    container.innerHTML = html + `</div>`;
   }
 
-  notify(msg, type = 'info') {
-    // Custom Toast implementation
-    console.log(`[${type.toUpperCase()}] ${msg}`);
-    // In production, insert a temporary DOM element here
+  async saveState() {
+    const userRef = doc(this.db, "users", this.state.user.uid);
+    await updateDoc(userRef, { quests: this.state.quests, xp: this.state.xp });
   }
 
-  confirmAction(msg) {
-    return new Promise((resolve) => {
-      const modal = document.getElementById('confirm-modal');
-      const msgEl = document.getElementById('confirm-message');
-      msgEl.textContent = msg;
-      modal.classList.remove('hidden');
-
-      const cleanup = (val) => {
-        modal.classList.add('hidden');
-        resolve(val);
-      };
-
-      document.getElementById('confirm-ok').onclick = () => cleanup(true);
-      document.getElementById('confirm-cancel').onclick = () => cleanup(false);
-    });
+  toggleModal(id, show) {
+    document.getElementById(id).classList.toggle('hidden', !show);
   }
 
-  debounce(func, wait) {
-    let timeout;
-    return (...args) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-  }
-
-  showLoading(show) {
-    document.getElementById('loading-spinner').classList.toggle('hidden', !show);
-  }
-
-  initVisuals() {
-    // Initialize WebGL background engine here...
+  renderAll() {
+    document.getElementById('user-name').innerText = this.state.user.displayName;
+    document.getElementById('xp-count').innerText = this.state.xp;
+    this.renderQuests();
   }
 }
 
-// Global instance for easy access in HTML event handlers
+// Global scope access for onclick handlers
 window.app = new HerosQuest();

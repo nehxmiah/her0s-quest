@@ -3,121 +3,114 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Hero's Quest - Gamify your life and track your habits">
-  <title>Hero's Quest | Production Edition</title>
+  <meta name="description" content="Hero's Quest - A Spiritual and Habit Tracking Journey">
+  <title>Hero's Quest | Spiritual Journey</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=Space+Grotesk:wght@500;700&family=Orbitron:wght@700&family=Righteous&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=Space+Grotesk:wght@500;700&family=Righteous&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" defer></script>
+  
   <link rel="stylesheet" href="style.css">
   <script type="module" src="script.js" defer></script>
 </head>
 <body data-theme="physical">
   <canvas id="webGLApp" aria-hidden="true"></canvas>
 
-  <div id="loading-spinner" class="spinner hidden" role="status">
-    <div class="spinner-ring"></div>
-    <span class="sr-only">Loading...</span>
-  </div>
-
   <div id="login-screen" class="login-screen">
     <main class="login-card glass">
       <h1 class="login-title">HERO'S QUEST</h1>
-      <p class="login-subtitle">Transform your life, one quest at a time</p>
+      <p class="login-subtitle">Begin your path to spiritual growth.</p>
       <button id="google-login-btn" class="btn-primary" aria-label="Sign in with Google">
-        <i class="fab fa-google" aria-hidden="true"></i> START REDEMPTION
+        <i class="fab fa-google"></i> START JOURNEY
       </button>
-      <div id="login-error" class="error-message hidden" role="alert"></div>
     </main>
   </div>
 
   <div id="app-screen" class="app-container hidden">
-    <aside class="sidebar glass" id="sidebar">
-      <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle navigation">
-        <i class="fas fa-bars"></i>
-      </button>
-
-      <div class="user-section">
-        <div class="user-avatar" id="avatar">🦸‍♂️</div>
-        <h2 class="user-name" id="user-name">HERO</h2>
-        <div class="level-badge" id="level-display">LVL 1</div>
-      </div>
-
-      <div class="xp-section">
-        <div class="xp-bar-container" title="Experience Points">
-          <div class="xp-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-            <div class="xp-fill" id="xp-fill"></div>
-          </div>
+    <aside class="sidebar glass">
+      <div class="user-profile">
+        <div class="avatar" id="user-avatar">☦</div>
+        <div class="user-info">
+          <h2 id="user-name">Pilgrim</h2>
+          <span class="level-tag" id="level-display">Level 1</span>
         </div>
-        <div class="xp-text" id="xp-text">0 / 100 XP</div>
       </div>
 
-      <div class="gold-display" title="Current Gold">
-        <i class="fas fa-coins" aria-hidden="true"></i>
-        <span id="gold">0</span>
-      </div>
-
-      <nav class="sidebar-nav">
+      <nav class="sidebar-nav" role="navigation">
         <button class="nav-btn active" data-tab="physical"><i class="fas fa-dumbbell"></i> Physical</button>
         <button class="nav-btn" data-tab="mental"><i class="fas fa-brain"></i> Mental</button>
-        <button class="nav-btn" data-tab="spiritual"><i class="fas fa-square-plus"></i> Spiritual</button>
-        <button class="nav-btn" data-tab="blights"><i class="fas fa-biohazard"></i> Blights</button>
+        <button class="nav-btn" data-tab="spiritual" aria-label="Spiritual Tab">
+          <span class="orthodox-icon">☦</span> Spiritual
+        </button>
         <button class="nav-btn" data-tab="stats"><i class="fas fa-chart-line"></i> Statistics</button>
-        <button class="nav-btn" data-tab="shop"><i class="fas fa-store"></i> Shop</button>
+        <button class="nav-btn" data-tab="calendar"><i class="fas fa-calendar-alt"></i> Calendar</button>
       </nav>
 
-      <button class="btn-logout" id="logout-btn">
-        <i class="fas fa-sign-out-alt"></i> Logout
-      </button>
+      <button id="logout-btn" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
     </aside>
 
     <main class="main-content">
       <header class="content-header">
-        <div class="header-top">
-          <h2 class="page-title" id="view-title">PHYSICAL QUESTS</h2>
-          <div id="current-date" class="date-display"></div>
+        <h1 id="view-title">PHYSICAL QUESTS</h1>
+        <div class="header-stats glass">
+          <span><i class="fas fa-star"></i> <span id="xp-count">0</span> XP</span>
         </div>
       </header>
 
-      <section id="quest-area">
-        <div id="motivational-quote" class="quote-card glass"></div>
-        <div class="quest-list-container glass">
-          <div class="quest-list-header">
-            <h2>Current Tasks</h2>
-            <button class="btn-toggle-add" id="toggle-add-quest" aria-label="Add new quest">
-              <i class="fas fa-plus"></i>
-            </button>
-          </div>
+      <section id="quest-view" class="tab-view">
+        <div class="quest-list-header">
+          <h2>Daily Tasks</h2>
+          <button id="open-add-modal" class="btn-add-quest" aria-label="Create new quest">
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
+        <div id="quest-list" class="quest-grid"></div>
+      </section>
 
-          <form id="add-quest-form" class="add-quest-form hidden">
-            <div class="form-row">
-              <input type="text" id="new-name" placeholder="Quest name..." maxlength="50" required>
-              <input type="number" id="new-xp" placeholder="XP (10-100)" min="1" max="500">
-              <label class="checkbox-container">
-                <input type="checkbox" id="new-repeat" checked>
-                <span class="checkmark"></span> Daily
-              </label>
-              <button type="button" id="add-quest-btn" class="btn-primary">ADD</button>
-            </div>
-          </form>
-
-          <div id="quest-list" class="quest-grid" role="list"></div>
+      <section id="stats-view" class="tab-view hidden">
+        <div class="full-page-stats glass">
+          <canvas id="progressChart"></canvas>
         </div>
       </section>
 
-      </main>
+      <section id="calendar-view" class="tab-view hidden">
+        <div class="calendar-layout">
+          <div class="calendar-info">
+            <h3>Journey Timeline</h3>
+            <p>Your consistency is the foundation of your growth.</p>
+          </div>
+          <div id="calendar-widget" class="calendar-container glass"></div>
+        </div>
+      </section>
+    </main>
   </div>
 
-  <div id="confirm-modal" class="modal hidden" role="dialog">
+  <div id="add-modal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-backdrop"></div>
     <div class="modal-content glass">
-      <h3 id="confirm-title">Are you sure?</h3>
-      <p id="confirm-message"></p>
+      <h3>Divine Task</h3>
+      <form id="add-quest-form">
+        <input type="text" id="quest-name" placeholder="Quest Name" required maxlength="40">
+        <input type="number" id="quest-xp" placeholder="XP Reward (10-100)" min="10" max="100" required>
+        <div class="modal-buttons">
+          <button type="button" class="btn-secondary close-modal">Cancel</button>
+          <button type="submit" class="btn-primary">Bless Quest</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="confirm-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content glass">
+      <h3>Conclude Quest?</h3>
+      <p>Are you sure you wish to remove this task from your journey?</p>
       <div class="modal-buttons">
-        <button id="confirm-cancel" class="btn-secondary">Cancel</button>
-        <button id="confirm-ok" class="btn-primary">Confirm</button>
+        <button class="btn-secondary" id="cancel-delete">Remain</button>
+        <button class="btn-primary btn-danger" id="confirm-delete">Remove</button>
       </div>
     </div>
   </div>
