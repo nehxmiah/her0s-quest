@@ -317,12 +317,13 @@ $('add-btn')?.addEventListener('click', () => {
     xp: questXP, 
     repeat: isRepeating 
   });
-  
+ 
   // Clear form
   $('quest-name').value = '';
   $('quest-xp').value = '';
   $('quest-repeat').checked = false;
-  
+  // Add this line at the end of your addNewQuest() function
+toggleAddPanel();
   renderQuestList();
   syncDataToFirebase();
 });
@@ -818,6 +819,18 @@ $('logout-btn')?.addEventListener('click', async () => {
   }
 });
 
+// Add this function to script.js
+window.toggleAddPanel = () => {
+    const panel = document.getElementById('add-panel');
+    const btn = document.getElementById('toggle-add-btn');
+    
+    panel.classList.toggle('hidden');
+    
+    // Optional: Rotate the icon when open
+    const icon = btn.querySelector('i');
+    icon.style.transform = panel.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(45deg)';
+    icon.style.transition = 'transform 0.3s ease';
+};
 // ========================================
 // INITIALIZATION COMPLETE
 // ========================================
