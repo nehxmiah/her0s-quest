@@ -17,19 +17,31 @@
   <script type="module" src="script.js" defer></script>
 </head>
 <body data-theme="home">
+  <!-- Three.js Background -->
   <canvas id="webGLApp" aria-hidden="true"></canvas>
 
+  <!-- Particle Effects Container -->
+  <div id="particles-container"></div>
+
+  <!-- Login Screen -->
   <div id="login-screen" class="login-screen">
     <main class="login-card glass">
+      <div class="login-logo">
+        <i class="fas fa-crown"></i>
+      </div>
       <h1 class="login-title">HERO'S QUEST</h1>
       <p class="login-subtitle">Embark on your journey of self-improvement.</p>
-      <button id="google-login-btn" class="btn-primary" aria-label="Sign in with Google">
-        <i class="fab fa-google"></i> START JOURNEY
+      <button id="google-login-btn" class="btn-primary btn-epic" aria-label="Sign in with Google">
+        <i class="fab fa-google"></i> 
+        <span>START JOURNEY</span>
+        <div class="btn-glow"></div>
       </button>
     </main>
   </div>
 
+  <!-- Main Application -->
   <div id="app-screen" class="app-container hidden">
+    <!-- Left Sidebar -->
     <aside class="sidebar glass">
       <div class="user-profile">
         <img class="avatar" id="user-avatar" src="" alt="User avatar">
@@ -40,103 +52,182 @@
       </div>
 
       <nav class="sidebar-nav" role="navigation">
-        <button class="nav-btn active" data-tab="home"><i class="fas fa-home"></i> Home</button>
-        <button class="nav-btn" data-tab="stats"><i class="fas fa-chart-line"></i> Stats</button>
-        <button class="nav-btn" data-tab="calendar"><i class="fas fa-calendar-alt"></i> Calendar</button>
-        <button class="nav-btn" data-tab="motivation"><i class="fas fa-fire"></i> Motivation</button>
-        <button class="nav-btn" data-tab="spiritual"><i class="fas fa-pray"></i> Spiritual</button>
-        <button class="nav-btn" data-tab="physical"><i class="fas fa-dumbbell"></i> Physical</button>
-        <button class="nav-btn" data-tab="mental"><i class="fas fa-brain"></i> Mental</button>
-        <button class="nav-btn" data-tab="financial"><i class="fas fa-money-bill"></i> Financial</button>
-        <button class="nav-btn" data-tab="blight"><i class="fas fa-skull"></i> Blight</button>
+        <button class="nav-btn active" data-tab="home">
+          <i class="fas fa-home"></i> 
+          <span>Home</span>
+          <div class="nav-glow"></div>
+        </button>
+        <button class="nav-btn" data-tab="stats">
+          <i class="fas fa-chart-line"></i> 
+          <span>Stats</span>
+          <div class="nav-glow"></div>
+        </button>
+        <button class="nav-btn" data-tab="motivation">
+          <i class="fas fa-fire"></i> 
+          <span>Motivation</span>
+          <div class="nav-glow"></div>
+        </button>
+        <button class="nav-btn" data-tab="spiritual">
+          <i class="fas fa-pray"></i> 
+          <span>Spiritual</span>
+          <div class="nav-glow"></div>
+        </button>
+        <button class="nav-btn" data-tab="physical">
+          <i class="fas fa-dumbbell"></i> 
+          <span>Physical</span>
+          <div class="nav-glow"></div>
+        </button>
+        <button class="nav-btn" data-tab="mental">
+          <i class="fas fa-brain"></i> 
+          <span>Mental</span>
+          <div class="nav-glow"></div>
+        </button>
+        <button class="nav-btn" data-tab="financial">
+          <i class="fas fa-money-bill-wave"></i> 
+          <span>Financial</span>
+          <div class="nav-glow"></div>
+        </button>
+        <button class="nav-btn" data-tab="blight">
+          <i class="fas fa-skull"></i> 
+          <span>Blight</span>
+          <div class="nav-glow"></div>
+        </button>
       </nav>
 
-      <button id="open-add-modal" class="btn-add-quest"><i class="fas fa-plus"></i> New Quest</button>
-      <button id="logout-btn" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+      <button id="open-add-modal" class="btn-add-quest btn-epic">
+        <i class="fas fa-plus"></i> 
+        <span>New Quest</span>
+        <div class="btn-glow"></div>
+      </button>
+      
+      <button id="logout-btn" class="btn-logout">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
     </aside>
 
+    <!-- Main Content Area -->
     <main class="main-content">
       <header class="content-header">
-        <h1 id="view-title">HOME</h1>
+        <div class="header-left">
+          <h1 id="view-title">HOME</h1>
+          <div id="motivational-quote" class="motivational-quote glass"></div>
+        </div>
         <div class="header-stats glass">
           <span><i class="fas fa-star"></i> <span id="xp-count">0</span> XP</span>
         </div>
       </header>
 
+      <!-- Home/Quest View -->
       <section id="quest-view" class="tab-view">
         <div id="quest-list" class="quest-grid"></div>
       </section>
 
+      <!-- Stats View -->
       <section id="stats-view" class="tab-view hidden">
         <div class="stats-grid">
           <div class="stat-card glass">
-            <h3>Physical Score</h3>
-            <p id="stat-physical">0</p>
+            <div class="stat-icon"><i class="fas fa-dumbbell"></i></div>
+            <h3>Physical</h3>
+            <p class="stat-value" id="stat-physical">0</p>
+            <div class="stat-bar">
+              <div class="stat-fill" id="stat-physical-bar"></div>
+            </div>
           </div>
           <div class="stat-card glass">
-            <h3>Mental Score</h3>
-            <p id="stat-mental">0</p>
+            <div class="stat-icon"><i class="fas fa-brain"></i></div>
+            <h3>Mental</h3>
+            <p class="stat-value" id="stat-mental">0</p>
+            <div class="stat-bar">
+              <div class="stat-fill" id="stat-mental-bar"></div>
+            </div>
           </div>
           <div class="stat-card glass">
-            <h3>Spiritual Score</h3>
-            <p id="stat-spiritual">0</p>
+            <div class="stat-icon"><i class="fas fa-pray"></i></div>
+            <h3>Spiritual</h3>
+            <p class="stat-value" id="stat-spiritual">0</p>
+            <div class="stat-bar">
+              <div class="stat-fill" id="stat-spiritual-bar"></div>
+            </div>
           </div>
           <div class="stat-card glass">
-            <h3>Motivation Score</h3>
-            <p id="stat-motivation">0</p>
+            <div class="stat-icon"><i class="fas fa-fire"></i></div>
+            <h3>Motivation</h3>
+            <p class="stat-value" id="stat-motivation">0</p>
+            <div class="stat-bar">
+              <div class="stat-fill" id="stat-motivation-bar"></div>
+            </div>
           </div>
           <div class="stat-card glass">
-            <h3>Financial Balance</h3>
-            <p id="stat-financial-balance">0</p>
+            <div class="stat-icon"><i class="fas fa-wallet"></i></div>
+            <h3>Balance</h3>
+            <p class="stat-value" id="stat-financial-balance">0</p>
           </div>
-          <div class="stat-card glass">
+          <div class="stat-card glass stat-positive">
+            <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
             <h3>Income</h3>
-            <p id="stat-income">0</p>
+            <p class="stat-value" id="stat-income">0</p>
           </div>
-          <div class="stat-card glass">
+          <div class="stat-card glass stat-negative">
+            <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
             <h3>Expenses</h3>
-            <p id="stat-expenses">0</p>
+            <p class="stat-value" id="stat-expenses">0</p>
           </div>
-          <div class="stat-card glass text-danger">
+          <div class="stat-card glass stat-danger">
+            <div class="stat-icon"><i class="fas fa-skull"></i></div>
             <h3>Blight Damage</h3>
-            <p id="stat-blight">0</p>
+            <p class="stat-value" id="stat-blight">0</p>
           </div>
         </div>
-        <div class="full-page-stats glass">
+        <div class="chart-container glass">
+          <h3>Progress Over Time</h3>
           <canvas id="progressChart"></canvas>
         </div>
       </section>
 
-      <section id="calendar-view" class="tab-view hidden">
-        <div class="calendar-layout">
-          <div class="calendar-info">
-            <h3>Journey Timeline</h3>
-            <p>Your consistency builds your legacy.</p>
-            <div id="calendar-history" class="history-list"></div>
-          </div>
-          <div id="calendar-widget" class="calendar-container glass"></div>
+      <!-- Motivation View -->
+      <section id="motivation-view" class="tab-view hidden">
+        <div class="motivation-content">
+          <div id="motivation-quotes-list" class="quotes-grid"></div>
         </div>
       </section>
     </main>
+
+    <!-- Right Fixed Calendar -->
+    <aside class="calendar-sidebar glass">
+      <h3><i class="fas fa-calendar-alt"></i> Calendar</h3>
+      <div id="calendar-widget" class="calendar-container"></div>
+      <div id="calendar-history" class="history-list"></div>
+    </aside>
   </div>
 
+  <!-- Add Quest Modal -->
   <div id="add-modal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-backdrop"></div>
     <div class="modal-content glass">
-      <h3>Create Quest</h3>
+      <button class="modal-close" aria-label="Close modal">×</button>
+      <h3><i class="fas fa-plus-circle"></i> Create Quest</h3>
       <form id="add-quest-form">
-        <input type="text" id="quest-name" placeholder="Quest Name" required maxlength="40">
-        <input type="number" id="quest-xp" placeholder="XP Value" min="10" max="500" required>
-        <select id="quest-category">
-          <option value="physical">Physical</option>
-          <option value="mental">Mental</option>
-          <option value="spiritual">Spiritual</option>
-          <option value="motivation">Motivation</option>
-          <option value="financial">Financial</option>
-          <option value="blight">Blight</option>
-        </select>
-        <div id="target-category-group" class="hidden">
-          <label>Target Category for Blight</label>
+        <div class="form-group">
+          <label for="quest-name">Quest Name</label>
+          <input type="text" id="quest-name" placeholder="Enter quest name..." required maxlength="40">
+        </div>
+        <div class="form-group">
+          <label for="quest-xp">XP Value</label>
+          <input type="number" id="quest-xp" placeholder="50" min="10" max="500" value="50" required>
+        </div>
+        <div class="form-group">
+          <label for="quest-category">Category</label>
+          <select id="quest-category">
+            <option value="physical">Physical</option>
+            <option value="mental">Mental</option>
+            <option value="spiritual">Spiritual</option>
+            <option value="motivation">Motivation</option>
+            <option value="financial">Financial</option>
+            <option value="blight">Blight</option>
+          </select>
+        </div>
+        <div id="target-category-group" class="form-group hidden">
+          <label for="target-category">Target Category for Blight</label>
           <select id="target-category">
             <option value="physical">Physical</option>
             <option value="mental">Mental</option>
@@ -147,28 +238,37 @@
         </div>
         <div class="modal-buttons">
           <button type="button" class="btn-secondary close-modal">Cancel</button>
-          <button type="submit" class="btn-primary">Add Quest</button>
+          <button type="submit" class="btn-primary btn-epic">
+            <span>Add Quest</span>
+            <div class="btn-glow"></div>
+          </button>
         </div>
       </form>
     </div>
   </div>
 
+  <!-- Delete Confirmation Modal -->
   <div id="confirm-modal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-backdrop"></div>
     <div class="modal-content glass">
-      <h3>Delete Quest?</h3>
-      <p>Are you sure you want to delete this quest?</p>
+      <h3><i class="fas fa-exclamation-triangle"></i> Delete Quest?</h3>
+      <p>Are you sure you want to delete this quest? This action cannot be undone.</p>
       <div class="modal-buttons">
         <button class="btn-secondary" id="cancel-delete">Cancel</button>
-        <button class="btn-primary btn-danger" id="confirm-delete">Delete</button>
+        <button class="btn-primary btn-danger btn-epic" id="confirm-delete">
+          <span>Delete</span>
+          <div class="btn-glow"></div>
+        </button>
       </div>
     </div>
   </div>
 
+  <!-- Rating Modal -->
   <div id="rating-modal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-backdrop"></div>
     <div class="modal-content glass">
-      <h3 id="rating-title">Rate Performance</h3>
+      <h3 id="rating-title"><i class="fas fa-star"></i> Rate Performance</h3>
+      <p>How well did you complete this quest?</p>
       <div class="rating-stars">
         <i class="far fa-star" data-value="1"></i>
         <i class="far fa-star" data-value="2"></i>
@@ -178,8 +278,20 @@
       </div>
       <div class="modal-buttons">
         <button class="btn-secondary" id="cancel-rating">Cancel</button>
-        <button class="btn-primary" id="confirm-rating">Submit</button>
+        <button class="btn-primary btn-epic" id="confirm-rating">
+          <span>Submit</span>
+          <div class="btn-glow"></div>
+        </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Achievement Toast -->
+  <div id="achievement-toast" class="achievement-toast glass hidden">
+    <i class="fas fa-trophy"></i>
+    <div class="achievement-content">
+      <h4>Achievement Unlocked!</h4>
+      <p id="achievement-text"></p>
     </div>
   </div>
 </body>
