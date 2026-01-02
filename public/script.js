@@ -1,711 +1,832 @@
-// Hero's Quest - Enhanced Self-Improvement Application
-// Full-featured gamified personal development tracker
-
+// Hero's Quest - Firebase Configuration
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// Motivational quotes database
+const firebaseConfig = {
+  apiKey: "AIzaSyBDTTyEWFBam2EEWK4X2VV5E-wUJx10V38",
+  authDomain: "her0s-quest.firebaseapp.com",
+  projectId: "her0s-quest",
+  storageBucket: "her0s-quest.firebasestorage.app",
+  messagingSenderId: "120264562008",
+  appId: "1:120264562008:web:69365314951dc05980812d"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+
+
+import React, { useState, useEffect, useRef } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Trophy, Home, TrendingUp, Flame, Heart, Brain, DollarSign, Skull, Plus, X, Star, Calendar, LogOut } from 'lucide-react';
+
+// Motivational Quotes Database
 const QUOTES = {
   spiritual: [
     { text: "Faith is taking the first step even when you don't see the whole staircase.", author: "Martin Luther King Jr." },
-    { text: "The soul always knows what to do to heal itself. The challenge is to silence the mind.", author: "Caroline Myss" },
-    { text: "Your task is not to seek for love, but merely to seek and find all the barriers within yourself that you have built against it.", author: "Rumi" },
+    { text: "The soul always knows what to do to heal itself.", author: "Caroline Myss" },
+    { text: "Your task is not to seek for love, but find the barriers within yourself.", author: "Rumi" },
     { text: "The privilege of a lifetime is to become who you truly are.", author: "Carl Jung" },
     { text: "Be still and know.", author: "Psalm 46:10" }
   ],
   physical: [
     { text: "Take care of your body. It's the only place you have to live.", author: "Jim Rohn" },
     { text: "The only bad workout is the one that didn't happen.", author: "Unknown" },
-    { text: "Your body can stand almost anything. It's your mind that you have to convince.", author: "Unknown" },
-    { text: "Strength doesn't come from what you can do. It comes from overcoming the things you once thought you couldn't.", author: "Rikki Rogers" },
-    { text: "The pain you feel today will be the strength you feel tomorrow.", author: "Unknown" }
+    { text: "Your body can stand almost anything. It's your mind you must convince.", author: "Unknown" },
+    { text: "Strength comes from overcoming what you thought you couldn't.", author: "Rikki Rogers" },
+    { text: "The pain you feel today is the strength you feel tomorrow.", author: "Unknown" }
   ],
   mental: [
     { text: "The mind is everything. What you think you become.", author: "Buddha" },
-    { text: "Your intellect may be confused, but your emotions will never lie to you.", author: "Roger Ebert" },
-    { text: "The greatest weapon against stress is our ability to choose one thought over another.", author: "William James" },
-    { text: "You have power over your mind - not outside events. Realize this, and you will find strength.", author: "Marcus Aurelius" },
+    { text: "Your emotions will never lie to you.", author: "Roger Ebert" },
+    { text: "Choose one thought over another to defeat stress.", author: "William James" },
+    { text: "You have power over your mind, not outside events.", author: "Marcus Aurelius" },
     { text: "Learning never exhausts the mind.", author: "Leonardo da Vinci" }
   ],
   financial: [
     { text: "An investment in knowledge pays the best interest.", author: "Benjamin Franklin" },
-    { text: "It's not how much money you make, but how much money you keep.", author: "Robert Kiyosaki" },
-    { text: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb" },
-    { text: "Do not save what is left after spending, but spend what is left after saving.", author: "Warren Buffett" },
+    { text: "It's not how much you make, but how much you keep.", author: "Robert Kiyosaki" },
+    { text: "The best time to plant a tree was 20 years ago. The second best is now.", author: "Chinese Proverb" },
+    { text: "Save first, spend what's left.", author: "Warren Buffett" },
     { text: "Wealth is the ability to fully experience life.", author: "Henry David Thoreau" }
   ],
   motivation: [
     { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
     { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
-    { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
+    { text: "Success is the courage to continue that counts.", author: "Winston Churchill" },
     { text: "Your limitation—it's only your imagination.", author: "Unknown" },
     { text: "Great things never come from comfort zones.", author: "Unknown" }
   ],
   blight: [
     { text: "Every setback is a setup for a comeback.", author: "Unknown" },
     { text: "Fall seven times, stand up eight.", author: "Japanese Proverb" },
-    { text: "It's not how far you fall, but how high you bounce that counts.", author: "Zig Ziglar" },
+    { text: "It's not how far you fall, but how high you bounce.", author: "Zig Ziglar" },
     { text: "The phoenix must burn to emerge.", author: "Janet Fitch" },
     { text: "Your struggles develop your strengths.", author: "Arnold Schwarzenegger" }
   ]
 };
 
-class HerosQuest {
-  constructor() {
-    this.firebaseConfig = {
-      apiKey: "AIzaSyBDTTyEWFBam2EEWK4X2VV5E-wUJx10V38",
-      authDomain: "her0s-quest.firebaseapp.com",
-      projectId: "her0s-quest",
-      storageBucket: "her0s-quest.firebasestorage.app",
-      messagingSenderId: "120264562008",
-      appId: "1:120264562008:web:69365314951dc05980812d"
-    };
+const HerosQuest = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState({ name: 'Hero', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Hero' });
+  const [currentTab, setCurrentTab] = useState('home');
+  const [quests, setQuests] = useState([]);
+  const [dailyLogs, setDailyLogs] = useState({});
+  const [xp, setXp] = useState(0);
+  const [level, setLevel] = useState(1);
+  const [categories, setCategories] = useState({ physical: 0, mental: 0, spiritual: 0, motivation: 0 });
+  const [financial, setFinancial] = useState({ balance: 0, income: 0, expenses: 0 });
+  const [blightDamage, setBlightDamage] = useState(0);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [pendingComplete, setPendingComplete] = useState(null);
+  const [rating, setRating] = useState(3);
+  const [achievement, setAchievement] = useState(null);
+  const [currentQuote, setCurrentQuote] = useState(null);
+  const [achievements, setAchievements] = useState([]);
 
-    this.state = {
-      user: null,
-      currentTab: 'home',
-      quests: [],
-      dailyLogs: {},
-      xp: 0,
-      level: 1,
-      categories: { physical: 0, mental: 0, spiritual: 0, motivation: 0 },
-      financial: { balance: 0, income: 0, expenses: 0 },
-      blightDamage: 0,
-      pendingDelete: null,
-      pendingComplete: null,
-      achievements: []
-    };
+  const themeColors = {
+    home: { accent: '#4caf50', rgb: '76, 175, 80' },
+    stats: { accent: '#2196f3', rgb: '33, 150, 243' },
+    motivation: { accent: '#ff9800', rgb: '255, 152, 0' },
+    spiritual: { accent: '#9c27b0', rgb: '156, 39, 176' },
+    physical: { accent: '#f44336', rgb: '244, 67, 54' },
+    mental: { accent: '#607d8b', rgb: '96, 125, 139' },
+    financial: { accent: '#ffc107', rgb: '255, 193, 7' },
+    blight: { accent: '#b71c1c', rgb: '183, 28, 28' }
+  };
 
-    this.chart = null;
-    this.threeScene = null;
-    this.currentQuote = null;
-
-    this.init();
-  }
-
-  async init() {
-    this.app = initializeApp(this.firebaseConfig);
-    this.auth = getAuth(this.app);
-    this.db = getFirestore(this.app);
-    this.provider = new GoogleAuthProvider();
-
-    this.setupEventListeners();
-    this.handleAuth();
-    this.initThreeJS();
-    this.startQuoteRotation();
-  }
-
-  setupEventListeners() {
-    // Tab navigation
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
-    });
-
-    // Modals
-    document.getElementById('open-add-modal').addEventListener('click', () => this.toggleModal('add-modal', true));
-    document.querySelectorAll('.close-modal, .modal-close').forEach(b => {
-      b.addEventListener('click', (e) => {
-        const modal = e.target.closest('.modal');
-        if (modal) this.toggleModal(modal.id, false);
-      });
-    });
-
-    // Close modal on backdrop click
-    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-      backdrop.addEventListener('click', (e) => {
-        const modal = e.target.closest('.modal');
-        if (modal) this.toggleModal(modal.id, false);
-      });
-    });
-
-    // Category change handler
-    document.getElementById('quest-category').addEventListener('change', (e) => {
-      const value = e.target.value;
-      const targetGroup = document.getElementById('target-category-group');
-      const xpInput = document.getElementById('quest-xp');
-      
-      targetGroup.classList.toggle('hidden', value !== 'blight');
-      
-      if (value === 'financial') {
-        xpInput.min = -500;
-        xpInput.value = 0;
-      } else if (value === 'blight') {
-        xpInput.min = 10;
-        xpInput.value = 50;
-      } else {
-        xpInput.min = 10;
-        xpInput.value = 50;
-      }
-    });
-
-    // Form submission
-    document.getElementById('add-quest-form').addEventListener('submit', (e) => this.handleAddQuest(e));
-
-    // Delete confirmation
-    document.getElementById('confirm-delete').addEventListener('click', () => this.executeDelete());
-    document.getElementById('cancel-delete').addEventListener('click', () => this.toggleModal('confirm-modal', false));
-
-    // Rating system
-    document.querySelectorAll('.rating-stars i').forEach(star => {
-      star.addEventListener('click', () => this.setRating(parseInt(star.dataset.value)));
-      star.addEventListener('mouseenter', () => this.previewRating(parseInt(star.dataset.value)));
-    });
-    
-    document.querySelector('.rating-stars').addEventListener('mouseleave', () => {
-      const currentRating = document.querySelectorAll('.rating-stars .active').length;
-      this.setRating(currentRating || 3);
-    });
-
-    document.getElementById('confirm-rating').addEventListener('click', () => this.confirmRating());
-    document.getElementById('cancel-rating').addEventListener('click', () => this.toggleModal('rating-modal', false));
-
-    // Auth
-    document.getElementById('google-login-btn').addEventListener('click', () => {
-      signInWithPopup(this.auth, this.provider).catch(err => {
-        console.error('Login error:', err);
-        this.showAchievement('Login Failed', 'Please try again');
-      });
-    });
-    
-    document.getElementById('logout-btn').addEventListener('click', () => signOut(this.auth));
-  }
-
-  handleAuth() {
-    onAuthStateChanged(this.auth, async (user) => {
-      if (user) {
-        this.state.user = user;
-        await this.syncData();
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('app-screen').classList.remove('hidden');
-        this.switchTab('home');
-        this.showAchievement('Welcome Back!', `Level ${this.state.level} Hero`);
-      } else {
-        document.getElementById('app-screen').classList.add('hidden');
-        document.getElementById('login-screen').classList.remove('hidden');
-      }
-    });
-  }
-
-  async syncData() {
-    try {
-      const userDoc = await getDoc(doc(this.db, "users", this.state.user.uid));
-      if (userDoc.exists()) {
-        const data = userDoc.data();
-        Object.assign(this.state, {
-          quests: data.quests || [],
-          dailyLogs: data.dailyLogs || {},
-          xp: data.xp || 0,
-          level: data.level || 1,
-          categories: data.categories || this.state.categories,
-          financial: data.financial || this.state.financial,
-          blightDamage: data.blightDamage || 0,
-          achievements: data.achievements || []
-        });
-      } else {
-        await setDoc(doc(this.db, "users", this.state.user.uid), this.state);
-      }
-      this.renderAll();
-    } catch (error) {
-      console.error('Sync error:', error);
+  // Load data on mount
+  useEffect(() => {
+    const savedAuth = localStorage.getItem('herosQuest_auth');
+    if (savedAuth) {
+      const data = JSON.parse(savedAuth);
+      setIsAuthenticated(true);
+      setUser(data.user);
+      setQuests(data.quests || []);
+      setDailyLogs(data.dailyLogs || {});
+      setXp(data.xp || 0);
+      setLevel(data.level || 1);
+      setCategories(data.categories || { physical: 0, mental: 0, spiritual: 0, motivation: 0 });
+      setFinancial(data.financial || { balance: 0, income: 0, expenses: 0 });
+      setBlightDamage(data.blightDamage || 0);
+      setAchievements(data.achievements || []);
     }
-  }
+  }, []);
 
-  switchTab(tabId) {
-    this.state.currentTab = tabId;
-    document.body.setAttribute('data-theme', tabId);
-
-    const titles = {
-      home: 'HOME',
-      stats: 'STATS',
-      motivation: 'MOTIVATION',
-      spiritual: 'SPIRITUAL',
-      physical: 'PHYSICAL',
-      mental: 'MENTAL',
-      financial: 'FINANCIAL',
-      blight: 'BLIGHT'
-    };
-    
-    document.getElementById('view-title').innerText = titles[tabId];
-
-    // Update quote
-    this.updateQuote(tabId);
-
-    // Show appropriate view
-    document.querySelectorAll('.tab-view').forEach(view => view.classList.add('hidden'));
-    
-    if (tabId === 'stats') {
-      document.getElementById('stats-view').classList.remove('hidden');
-      this.renderStats();
-    } else if (tabId === 'motivation') {
-      document.getElementById('motivation-view').classList.remove('hidden');
-      this.renderMotivationQuotes();
-    } else {
-      document.getElementById('quest-view').classList.remove('hidden');
-      this.renderQuests();
+  // Save data
+  useEffect(() => {
+    if (isAuthenticated) {
+      localStorage.setItem('herosQuest_auth', JSON.stringify({
+        user, quests, dailyLogs, xp, level, categories, financial, blightDamage, achievements
+      }));
     }
+  }, [isAuthenticated, user, quests, dailyLogs, xp, level, categories, financial, blightDamage, achievements]);
 
-    // Update active nav button
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.tab === tabId);
-    });
-  }
+  // Update quote when tab changes
+  useEffect(() => {
+    updateQuote();
+  }, [currentTab]);
 
-  updateQuote(category) {
-    const quoteEl = document.getElementById('motivational-quote');
-    if (!quoteEl) return;
-
-    const categoryQuotes = QUOTES[category] || QUOTES.motivation;
+  const updateQuote = () => {
+    const categoryQuotes = QUOTES[currentTab] || QUOTES.motivation;
     const quote = categoryQuotes[Math.floor(Math.random() * categoryQuotes.length)];
-    
-    quoteEl.style.opacity = '0';
-    setTimeout(() => {
-      quoteEl.innerHTML = `${quote.text} <br><small>— ${quote.author}</small>`;
-      quoteEl.style.opacity = '1';
-    }, 300);
-  }
+    setCurrentQuote(quote);
+  };
 
-  startQuoteRotation() {
-    setInterval(() => {
-      if (this.state.currentTab !== 'motivation') {
-        this.updateQuote(this.state.currentTab);
-      }
-    }, 30000); // Rotate every 30 seconds
-  }
+  const handleSignIn = () => {
+    setIsAuthenticated(true);
+    showAchievementToast('Welcome Back!', `Level ${level} Hero`);
+  };
 
-  renderMotivationQuotes() {
-    const container = document.getElementById('motivation-quotes-list');
-    container.innerHTML = '';
+  const handleSignOut = () => {
+    localStorage.removeItem('herosQuest_auth');
+    setIsAuthenticated(false);
+  };
 
-    Object.entries(QUOTES).forEach(([category, quotes]) => {
-      if (category === 'motivation') return; // Skip showing motivation in motivation tab
-      
-      const categoryCard = document.createElement('div');
-      categoryCard.className = 'glass';
-      categoryCard.style.padding = '2rem';
-      categoryCard.style.marginBottom = '1.5rem';
-      
-      const icon = {
-        spiritual: 'fa-pray',
-        physical: 'fa-dumbbell',
-        mental: 'fa-brain',
-        financial: 'fa-money-bill-wave',
-        blight: 'fa-skull'
-      }[category];
-      
-      categoryCard.innerHTML = `
-        <h3 style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; text-transform: capitalize;">
-          <i class="fas ${icon}" style="color: var(--accent);"></i>
-          ${category} Wisdom
-        </h3>
-        ${quotes.map(q => `
-          <div class="quote-card glass" style="margin-bottom: 1rem;">
-            <p>"${q.text}"</p>
-            <span>— ${q.author}</span>
-          </div>
-        `).join('')}
-      `;
-      
-      container.appendChild(categoryCard);
-    });
-  }
+  const showAchievementToast = (title, text) => {
+    setAchievement({ title, text });
+    setTimeout(() => setAchievement(null), 4000);
+  };
 
-  async handleAddQuest(e) {
+  const addQuest = (e) => {
     e.preventDefault();
-    
-    const name = document.getElementById('quest-name').value.trim();
-    const xp = parseInt(document.getElementById('quest-xp').value);
-    const category = document.getElementById('quest-category').value;
+    const formData = new FormData(e.target);
+    const name = formData.get('name');
+    const xpValue = parseInt(formData.get('xp'));
+    const category = formData.get('category');
+    const targetCategory = formData.get('targetCategory');
 
-    if (!name) return;
-
-    const newQuest = { 
-      id: Date.now(), 
-      name, 
-      xp: category === 'blight' ? -Math.abs(xp) : xp,
-      category 
+    const newQuest = {
+      id: Date.now(),
+      name,
+      xp: category === 'blight' ? -Math.abs(xpValue) : xpValue,
+      category,
+      targetCategory: category === 'blight' ? targetCategory : null
     };
-    
-    if (category === 'blight') {
-      newQuest.targetCategory = document.getElementById('target-category').value;
-    }
 
-    this.state.quests.push(newQuest);
-    await this.saveState();
-    
-    this.toggleModal('add-modal', false);
-    this.renderQuests();
-    this.showAchievement('Quest Created!', name);
-    
+    setQuests([...quests, newQuest]);
+    setShowAddModal(false);
+    showAchievementToast('Quest Created!', name);
     e.target.reset();
-    document.getElementById('quest-xp').value = 50;
-  }
+  };
 
-  requestComplete(id) {
-    const quest = this.state.quests.find(q => q.id === id);
+  const deleteQuest = () => {
+    setQuests(quests.filter(q => q.id !== pendingDelete));
+    setShowDeleteModal(false);
+    showAchievementToast('Quest Removed', 'The quest has been deleted');
+  };
+
+  const completeQuest = (questId) => {
+    const quest = quests.find(q => q.id === questId);
     if (!quest) return;
 
     const today = new Date().toISOString().split('T')[0];
-    if (this.state.dailyLogs[today]?.[quest.category]?.[id]?.completed) {
-      this.showAchievement('Already Completed', 'This quest is done for today!');
+    if (dailyLogs[today]?.[quest.category]?.[questId]?.completed) {
+      showAchievementToast('Already Completed', 'This quest is done for today!');
       return;
     }
 
-    this.state.pendingComplete = { 
-      id, 
-      category: quest.category, 
-      xp: quest.xp, 
-      targetCategory: quest.targetCategory,
-      name: quest.name
-    };
-    
-    const titleText = quest.category === 'blight' ? 'Rate Severity' : 'Rate Performance';
-    const icon = quest.category === 'blight' ? 'fa-skull' : 'fa-star';
-    
-    document.getElementById('rating-title').innerHTML = `<i class="fas ${icon}"></i> ${titleText}`;
-    this.setRating(3);
-    this.toggleModal('rating-modal', true);
-  }
+    setPendingComplete({ ...quest, id: questId });
+    setRating(3);
+    setShowRatingModal(true);
+  };
 
-  setRating(value) {
-    document.querySelectorAll('.rating-stars i').forEach((star, index) => {
-      const isActive = index < value;
-      star.classList.toggle('active', isActive);
-      star.classList.toggle('fas', isActive);
-      star.classList.toggle('far', !isActive);
-    });
-  }
-
-  previewRating(value) {
-    this.setRating(value);
-  }
-
-  async confirmRating() {
-    const { id, category, xp, targetCategory, name } = this.state.pendingComplete;
-    const rating = document.querySelectorAll('.rating-stars .active').length || 3;
-    
-    // Calculate earned XP based on rating
-    let earnedXp = Math.round(xp * rating / 5);
+  const confirmRating = () => {
+    const { id, category, xp: questXp, targetCategory, name } = pendingComplete;
+    const earnedXp = Math.round(questXp * rating / 5);
 
     const today = new Date().toISOString().split('T')[0];
-    if (!this.state.dailyLogs[today]) this.state.dailyLogs[today] = {};
-    if (!this.state.dailyLogs[today][category]) this.state.dailyLogs[today][category] = {};
+    const newDailyLogs = { ...dailyLogs };
+    if (!newDailyLogs[today]) newDailyLogs[today] = {};
+    if (!newDailyLogs[today][category]) newDailyLogs[today][category] = {};
+    newDailyLogs[today][category][id] = { completed: true, rating, earnedXp, timestamp: Date.now() };
 
-    this.state.dailyLogs[today][category][id] = { 
-      completed: true, 
-      rating, 
-      earnedXp,
-      timestamp: Date.now()
-    };
+    setDailyLogs(newDailyLogs);
 
-    // Update XP and categories
-    this.state.xp += earnedXp;
-    
+    const newXp = xp + earnedXp;
+    setXp(newXp);
+
     if (category === 'financial') {
-      this.state.financial.balance += earnedXp;
-      if (earnedXp > 0) {
-        this.state.financial.income += earnedXp;
-      } else {
-        this.state.financial.expenses += Math.abs(earnedXp);
-      }
-    } else if (category === 'blight') {
-      this.state.categories[targetCategory] += earnedXp; // Negative impact
-      this.state.blightDamage += Math.abs(earnedXp);
-      this.triggerBlightEffect();
-    } else {
-      this.state.categories[category] += earnedXp;
-    }
-
-    // Check for level up
-    const oldLevel = this.state.level;
-    while (this.state.xp >= 100 * this.state.level) {
-      this.state.level++;
-    }
-    
-    if (this.state.level > oldLevel) {
-      this.celebrateLevelUp();
-    }
-
-    // Check achievements
-    this.checkAchievements();
-
-    await this.saveState();
-    this.toggleModal('rating-modal', false);
-    this.renderQuests();
-    this.renderAll();
-    
-    // Show completion feedback
-    const emoji = category === 'blight' ? '💀' : '⭐';
-    this.showAchievement(`${emoji} Quest Complete!`, `+${earnedXp} XP`);
-  }
-
-  celebrateLevelUp() {
-    // Confetti effect
-    if (typeof confetti !== 'undefined') {
-      confetti({
-        particleCount: 200,
-        spread: 100,
-        origin: { y: 0.6 },
-        colors: [this.getCurrentAccentColor()]
+      setFinancial({
+        balance: financial.balance + earnedXp,
+        income: financial.income + (earnedXp > 0 ? earnedXp : 0),
+        expenses: financial.expenses + (earnedXp < 0 ? Math.abs(earnedXp) : 0)
       });
-    }
-    
-    this.showAchievement('🎉 LEVEL UP!', `You are now Level ${this.state.level}!`);
-  }
-
-  triggerBlightEffect() {
-    // Visual blight effect
-    document.body.style.filter = 'brightness(0.7) saturate(0.5)';
-    setTimeout(() => {
-      document.body.style.filter = '';
-    }, 1000);
-  }
-
-  checkAchievements() {
-    const achievements = [];
-    
-    // First quest
-    if (this.state.quests.length === 1 && !this.state.achievements.includes('first_quest')) {
-      achievements.push({ id: 'first_quest', title: 'First Steps', desc: 'Created your first quest' });
-    }
-    
-    // 10 quests completed
-    const totalCompleted = Object.values(this.state.dailyLogs).reduce((sum, day) => {
-      return sum + Object.values(day).reduce((s, cat) => s + Object.keys(cat).length, 0);
-    }, 0);
-    
-    if (totalCompleted >= 10 && !this.state.achievements.includes('10_quests')) {
-      achievements.push({ id: '10_quests', title: 'Dedicated', desc: 'Completed 10 quests' });
-    }
-    
-    // Level 5
-    if (this.state.level >= 5 && !this.state.achievements.includes('level_5')) {
-      achievements.push({ id: 'level_5', title: 'Rising Hero', desc: 'Reached Level 5' });
-    }
-    
-    // Show new achievements
-    achievements.forEach(ach => {
-      if (!this.state.achievements.includes(ach.id)) {
-        this.state.achievements.push(ach.id);
-        setTimeout(() => this.showAchievement(ach.title, ach.desc), 500);
-      }
-    });
-  }
-
-  showAchievement(title, text) {
-    const toast = document.getElementById('achievement-toast');
-    document.getElementById('achievement-text').innerHTML = `<strong>${title}</strong><br>${text}`;
-    
-    toast.classList.remove('hidden');
-    
-    setTimeout(() => {
-      toast.classList.add('hidden');
-    }, 4000);
-  }
-
-  requestDelete(id) {
-    this.state.pendingDelete = id;
-    this.toggleModal('confirm-modal', true);
-  }
-
-  async executeDelete() {
-    this.state.quests = this.state.quests.filter(q => q.id !== this.state.pendingDelete);
-    await this.saveState();
-    this.toggleModal('confirm-modal', false);
-    this.renderQuests();
-    this.showAchievement('Quest Removed', 'The quest has been deleted');
-  }
-
-  renderQuests() {
-    const container = document.getElementById('quest-list');
-    if (!container) return;
-    
-    container.innerHTML = '';
-    const tab = this.state.currentTab;
-    const today = new Date().toISOString().split('T')[0];
-    
-    let filteredQuests;
-    if (tab === 'home') {
-      filteredQuests = this.state.quests.filter(q => q.category !== 'blight');
+    } else if (category === 'blight') {
+      setCategories({ ...categories, [targetCategory]: categories[targetCategory] + earnedXp });
+      setBlightDamage(blightDamage + Math.abs(earnedXp));
     } else {
-      filteredQuests = this.state.quests.filter(q => q.category === tab);
+      setCategories({ ...categories, [category]: categories[category] + earnedXp });
     }
 
-    if (filteredQuests.length === 0) {
-      container.innerHTML = `
-        <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted);">
-          <i class="fas fa-inbox" style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.3;"></i>
-          <h3>No quests yet</h3>
-          <p>Click "New Quest" to get started on your journey!</p>
-        </div>
-      `;
-      return;
+    const newLevel = Math.floor(newXp / 100) + 1;
+    if (newLevel > level) {
+      setLevel(newLevel);
+      showAchievementToast('🎉 LEVEL UP!', `You are now Level ${newLevel}!`);
     }
 
-    filteredQuests.forEach((q, index) => {
-      const log = this.state.dailyLogs[today]?.[q.category]?.[q.id] || { completed: false };
-      const item = document.createElement('div');
-      item.className = 'quest-item glass';
-      item.style.animationDelay = `${index * 0.05}s`;
-      
-      const categoryIcons = {
-        physical: 'fa-dumbbell',
-        mental: 'fa-brain',
-        spiritual: 'fa-pray',
-        motivation: 'fa-fire',
-        financial: 'fa-money-bill-wave',
-        blight: 'fa-skull'
-      };
-      
-      const buttonText = log.completed ? 'Completed' : (q.category === 'blight' ? 'Suffer' : 'Complete');
-      const buttonClass = log.completed ? 'btn-primary' : (q.category === 'blight' ? 'btn-danger' : 'btn-primary');
-      
-      item.innerHTML = `
-        <button class="btn-delete" onclick="window.app.requestDelete(${q.id})" aria-label="Delete quest">×</button>
-        <div class="quest-info">
-          <h3><i class="fas ${categoryIcons[q.category]}"></i> ${q.name}</h3>
-          <p>${q.xp > 0 ? '+' : ''}${q.xp} XP</p>
-          ${q.targetCategory ? `<p style="font-size: 0.85rem; color: var(--text-muted);">Affects: ${q.targetCategory}</p>` : ''}
-        </div>
-        <button class="btn-primary ${buttonClass} btn-epic" ${log.completed ? 'disabled' : ''} onclick="window.app.requestComplete(${q.id})">
-          <span>${buttonText}</span>
-          ${!log.completed ? '<div class="btn-glow"></div>' : ''}
-        </button>
-      `;
-      
-      container.appendChild(item);
-    });
-  }
+    setShowRatingModal(false);
+    showAchievementToast(`${category === 'blight' ? '💀' : '⭐'} Quest Complete!`, `${earnedXp > 0 ? '+' : ''}${earnedXp} XP`);
+  };
 
-  renderStats() {
-    // Update stat values
-    document.getElementById('stat-physical').innerText = Math.round(this.state.categories.physical);
-    document.getElementById('stat-mental').innerText = Math.round(this.state.categories.mental);
-    document.getElementById('stat-spiritual').innerText = Math.round(this.state.categories.spiritual);
-    document.getElementById('stat-motivation').innerText = Math.round(this.state.categories.motivation);
-    document.getElementById('stat-financial-balance').innerText = Math.round(this.state.financial.balance);
-    document.getElementById('stat-income').innerText = Math.round(this.state.financial.income);
-    document.getElementById('stat-expenses').innerText = Math.round(this.state.financial.expenses);
-    document.getElementById('stat-blight').innerText = Math.round(this.state.blightDamage);
+  const getFilteredQuests = () => {
+    if (currentTab === 'home') return quests.filter(q => q.category !== 'blight');
+    if (currentTab === 'stats' || currentTab === 'motivation') return [];
+    return quests.filter(q => q.category === currentTab);
+  };
 
-    // Update progress bars
-    const maxValue = Math.max(...Object.values(this.state.categories), 100);
-    ['physical', 'mental', 'spiritual', 'motivation'].forEach(cat => {
-      const bar = document.getElementById(`stat-${cat}-bar`);
-      if (bar) {
-        const percentage = (this.state.categories[cat] / maxValue) * 100;
-        bar.style.width = `${Math.max(percentage, 0)}%`;
-      }
-    });
+  const isQuestCompleted = (questId, category) => {
+    const today = new Date().toISOString().split('T')[0];
+    return dailyLogs[today]?.[category]?.[questId]?.completed || false;
+  };
 
-    // Render chart
-    this.renderChart();
-  }
-
-  renderChart() {
-    const ctx = document.getElementById('progressChart');
-    if (!ctx) return;
-
-    if (this.chart) this.chart.destroy();
-
-    const dates = Object.keys(this.state.dailyLogs).sort();
+  const getChartData = () => {
+    const dates = Object.keys(dailyLogs).sort();
     let cumulative = 0;
-    const data = dates.map(d => {
-      const dayXp = Object.values(this.state.dailyLogs[d] || {}).reduce((sum, cat) => 
+    return dates.map(date => {
+      const dayXp = Object.values(dailyLogs[date] || {}).reduce((sum, cat) => 
         sum + Object.values(cat).reduce((s, l) => s + (l.earnedXp || 0), 0), 0
       );
       cumulative += dayXp;
-      return cumulative;
+      return { date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), xp: cumulative };
     });
+  };
 
-    const accentColor = this.getCurrentAccentColor();
-
-    this.chart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: dates.map(d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
-        datasets: [{
-          label: 'Total XP',
-          data,
-          borderColor: accentColor,
-          backgroundColor: `${accentColor}20`,
-          fill: true,
-          tension: 0.4,
-          borderWidth: 3,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          pointBackgroundColor: accentColor
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            labels: { color: '#ffffff' }
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-            ticks: { color: '#ffffff' }
-          },
-          x: {
-            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-            ticks: { color: '#ffffff' }
-          }
-        }
-      }
-    });
-  }
-
-  renderCalendar() {
-    const container = document.getElementById('calendar-widget');
-    if (!container) return;
-
+  const getCalendarDays = () => {
     const date = new Date();
     const year = date.getFullYear();
     const month = date.getMonth();
-    const monthName = date.toLocaleString('default', { month: 'long' });
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDay = new Date(year, month, 1).getDay();
-
-    let html = `<h4 style="text-align: center; margin-bottom: 1rem;">${monthName} ${year}</h4><div class="calendar-grid">`;
+    const today = date.getDate();
     
-    ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
-      html += `<div class="cal-header">${day}</div>`;
-    });
-
-    // Empty cells for days before month starts
-    for (let i = 0; i < firstDay; i++) {
-      html += '<div class="cal-day empty"></div>';
-    }
-
-    // Days of month
+    const days = [];
+    for (let i = 0; i < firstDay; i++) days.push(null);
     for (let day = 1; day <= daysInMonth; day++) {
       const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const dailyXp = Object.values(this.state.dailyLogs[dayStr] || {}).reduce((sum, cat) => 
+      const dailyXp = Object.values(dailyLogs[dayStr] || {}).reduce((sum, cat) => 
         sum + Object.values(cat).reduce((s, l) => s + (l.earnedXp || 0), 0), 0
       );
-      
       const heatLevel = Math.min(Math.floor(Math.abs(dailyXp) / 50), 4);
-      const isToday = day === date.getDate() && month === date.getMonth();
-      
-      html += `<div class="cal-day heat-${heatLevel} ${isToday ? 'today' : ''}" title="${dailyXp} XP">${day}</div>`;
+      days.push({ day, heatLevel, isToday: day === today, xp: dailyXp });
     }
-    
-    container.innerHTML = html + '</div>';
+    return days;
+  };
 
-    // Render history
-    this.renderHistory();
+  const TabIcon = ({ tab }) => {
+    const icons = {
+      home: Home, stats: TrendingUp, motivation: Flame, spiritual: Heart,
+      physical: Heart, mental: Brain, financial: DollarSign, blight: Skull
+    };
+    const Icon = icons[tab];
+    return <Icon className="w-5 h-5" />;
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
+        <div className="glass-card p-12 text-center max-w-md w-full animate-fadeIn">
+          <div className="text-6xl mb-6 animate-pulse">👑</div>
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-green-400 to-emerald-600 bg-clip-text text-transparent">
+            HERO'S QUEST
+          </h1>
+          <p className="text-gray-400 mb-8">Embark on your journey of self-improvement</p>
+          <button onClick={handleSignIn} className="btn-epic w-full">
+            START JOURNEY
+          </button>
+        </div>
+        <style>{styles}</style>
+      </div>
+    );
   }
 
-  renderHistory() {
-    const historyContainer = document.getElementById('calendar-history');
-    if (!historyContainer) return;
+  const theme = themeColors[currentTab];
 
-    const dates = Object.keys(this.state.dailyLogs).sort().reverse().slice(0, 7);
-    
-    if (dates.length === 0) {
-      historyContainer.innerHTML = '<div class="history-item" style="text-align: center; color: var(--text
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white" style={{ '--accent': theme.accent, '--accent-rgb': theme.rgb }}>
+      <div className="flex h-screen overflow-hidden p-4 gap-4">
+        {/* Sidebar */}
+        <aside className="w-72 glass-card p-6 flex flex-col">
+          <div className="flex items-center mb-8 pb-6 border-b border-white/10">
+            <img src={user.avatar} alt="Avatar" className="w-14 h-14 rounded-full mr-3 border-2" style={{ borderColor: theme.accent }} />
+            <div>
+              <h2 className="font-bold">{user.name}</h2>
+              <span className="px-2 py-1 rounded text-xs font-semibold" style={{ background: theme.accent, color: '#000' }}>
+                Level {level}
+              </span>
+            </div>
+          </div>
+
+          <nav className="flex-1 space-y-2">
+            {['home', 'stats', 'motivation', 'spiritual', 'physical', 'mental', 'financial', 'blight'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setCurrentTab(tab)}
+                className={`nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${currentTab === tab ? 'active' : ''}`}
+              >
+                <TabIcon tab={tab} />
+                <span className="capitalize">{tab}</span>
+              </button>
+            ))}
+          </nav>
+
+          <button onClick={() => setShowAddModal(true)} className="btn-epic w-full mb-4">
+            <Plus className="w-5 h-5 inline mr-2" />
+            New Quest
+          </button>
+
+          <button onClick={handleSignOut} className="text-gray-400 hover:text-white transition-colors">
+            <LogOut className="w-4 h-4 inline mr-2" />
+            Logout
+          </button>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 glass-card p-8 overflow-y-auto">
+          <header className="flex justify-between items-start mb-8">
+            <div>
+              <h1 className="text-4xl font-bold mb-4 uppercase">{currentTab}</h1>
+              {currentQuote && (
+                <div className="glass-card p-4 border-l-4 italic text-gray-300" style={{ borderColor: theme.accent }}>
+                  "{currentQuote.text}"
+                  <br />
+                  <small className="text-gray-500">— {currentQuote.author}</small>
+                </div>
+              )}
+            </div>
+            <div className="glass-card px-6 py-3 flex items-center gap-2" style={{ color: theme.accent }}>
+              <Star className="w-5 h-5" />
+              <span className="text-xl font-bold">{xp} XP</span>
+            </div>
+          </header>
+
+          {/* Quest View */}
+          {currentTab !== 'stats' && currentTab !== 'motivation' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {getFilteredQuests().length === 0 ? (
+                <div className="col-span-full text-center py-20 text-gray-500">
+                  <Trophy className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                  <h3 className="text-xl mb-2">No quests yet</h3>
+                  <p>Click "New Quest" to start your journey!</p>
+                </div>
+              ) : (
+                getFilteredQuests().map((quest, i) => {
+                  const completed = isQuestCompleted(quest.id, quest.category);
+                  return (
+                    <div key={quest.id} className="quest-card glass-card p-6 relative" style={{ animationDelay: `${i * 50}ms` }}>
+                      <button
+                        onClick={() => { setPendingDelete(quest.id); setShowDeleteModal(true); }}
+                        className="absolute top-4 right-4 w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white transition-all opacity-0 hover:opacity-100"
+                      >
+                        <X className="w-4 h-4 mx-auto" />
+                      </button>
+                      <div className="mb-4">
+                        <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                          <TabIcon tab={quest.category} />
+                          {quest.name}
+                        </h3>
+                        <p className="font-bold" style={{ color: theme.accent }}>
+                          {quest.xp > 0 ? '+' : ''}{quest.xp} XP
+                        </p>
+                        {quest.targetCategory && (
+                          <p className="text-sm text-gray-500">Affects: {quest.targetCategory}</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => completeQuest(quest.id)}
+                        disabled={completed}
+                        className={`btn-epic w-full ${quest.category === 'blight' ? 'bg-red-600' : ''}`}
+                      >
+                        {completed ? 'Completed' : (quest.category === 'blight' ? 'Suffer' : 'Complete')}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+
+          {/* Stats View */}
+          {currentTab === 'stats' && (
+            <div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                {Object.entries(categories).map(([cat, val]) => (
+                  <div key={cat} className="glass-card p-6 text-center">
+                    <TabIcon tab={cat} />
+                    <h3 className="text-sm uppercase text-gray-400 mt-2">{cat}</h3>
+                    <p className="text-3xl font-bold" style={{ color: theme.accent }}>{Math.round(val)}</p>
+                    <div className="w-full h-2 bg-white/10 rounded-full mt-2">
+                      <div className="h-full rounded-full" style={{ width: `${Math.min((val / Math.max(...Object.values(categories), 100)) * 100, 100)}%`, background: theme.accent }} />
+                    </div>
+                  </div>
+                ))}
+                <div className="glass-card p-6 text-center">
+                  <DollarSign className="w-6 h-6 mx-auto" />
+                  <h3 className="text-sm uppercase text-gray-400 mt-2">Balance</h3>
+                  <p className="text-3xl font-bold text-green-400">{Math.round(financial.balance)}</p>
+                </div>
+                <div className="glass-card p-6 text-center">
+                  <TrendingUp className="w-6 h-6 mx-auto text-green-400" />
+                  <h3 className="text-sm uppercase text-gray-400 mt-2">Income</h3>
+                  <p className="text-3xl font-bold text-green-400">{Math.round(financial.income)}</p>
+                </div>
+                <div className="glass-card p-6 text-center">
+                  <TrendingUp className="w-6 h-6 mx-auto text-red-400 transform rotate-180" />
+                  <h3 className="text-sm uppercase text-gray-400 mt-2">Expenses</h3>
+                  <p className="text-3xl font-bold text-red-400">{Math.round(financial.expenses)}</p>
+                </div>
+                <div className="glass-card p-6 text-center">
+                  <Skull className="w-6 h-6 mx-auto text-red-600" />
+                  <h3 className="text-sm uppercase text-gray-400 mt-2">Blight</h3>
+                  <p className="text-3xl font-bold text-red-600">{Math.round(blightDamage)}</p>
+                </div>
+              </div>
+
+              <div className="glass-card p-6">
+                <h3 className="text-xl font-bold mb-4">Progress Over Time</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={getChartData()}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                    <XAxis dataKey="date" stroke="#fff" />
+                    <YAxis stroke="#fff" />
+                    <Tooltip contentStyle={{ background: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '8px' }} />
+                    <Line type="monotone" dataKey="xp" stroke={theme.accent} strokeWidth={3} dot={{ fill: theme.accent }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* Motivation View */}
+          {currentTab === 'motivation' && (
+            <div className="space-y-6">
+              {Object.entries(QUOTES).filter(([cat]) => cat !== 'motivation').map(([cat, quotes]) => (
+                <div key={cat} className="glass-card p-6">
+                  <h3 className="text-xl font-bold mb-4 capitalize flex items-center gap-2">
+                    <TabIcon tab={cat} />
+                    {cat} Wisdom
+                  </h3>
+                  <div className="space-y-4">
+                    {quotes.map((q, i) => (
+                      <div key={i} className="glass-card p-4 border-l-4" style={{ borderColor: themeColors[cat].accent }}>
+                        <p className="italic mb-2">"{q.text}"</p>
+                        <span className="text-sm text-gray-500">— {q.author}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </main>
+
+        {/* Calendar Sidebar */}
+        <aside className="w-80 glass-card p-6">
+          <h3 className="flex items-center gap-2 mb-6 text-lg font-bold">
+            <Calendar className="w-5 h-5" />
+            Calendar
+          </h3>
+          <div className="mb-6">
+            <h4 className="text-center mb-4">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h4>
+            <div className="grid grid-cols-7 gap-1">
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
+                <div key={d} className="text-center text-xs text-gray-500 font-semibold">{d}</div>
+              ))}
+              {getCalendarDays().map((day, i) => (
+                <div
+                  key={i}
+                  className={`aspect-square flex items-center justify-center rounded text-sm ${
+                    !day ? 'opacity-0' : day.isToday ? 'ring-2 ring-current font-bold' : ''
+                  }`}
+                  style={{
+                    background: day && day.heatLevel > 0 ? `rgba(${theme.rgb}, ${day.heatLevel * 0.2})` : 'rgba(255,255,255,0.02)',
+                    color: day?.isToday ? theme.accent : '#fff'
+                  }}
+                  title={day ? `${day.xp} XP` : ''}
+                >
+                  {day?.day}
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      {/* Add Quest Modal */}
+      {showAddModal && (
+        <div className="modal">
+          <div className="modal-backdrop" onClick={() => setShowAddModal(false)} />
+          <div className="glass-card p-8 relative z-10 w-full max-w-md animate-scaleIn">
+            <button onClick={() => setShowAddModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white">
+              <X className="w-6 h-6" />
+            </button>
+            <h3 className="text-2xl font-bold mb-6">Create Quest</h3>
+            <form onSubmit={addQuest} className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Quest Name</label>
+                <input name="name" type="text" required maxLength="40" className="input-field" placeholder="Enter quest name..." />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">XP Value</label>
+                <input name="xp" type="number" required min="10" max="500" defaultValue="50" className="input-field" />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Category</label>
+                <select name="category" className="input-field" onChange={(e) => {
+                  const isBlight = e.target.value === 'blight';
+                  document.getElementById('targetCategoryGroup').classList.toggle('hidden', !isBlight);
+                }}>
+                  <option value="physical">Physical</option>
+                  <option value="mental">Mental</option>
+                  <option value="spiritual">Spiritual</option>
+                  <option value="motivation">Motivation</option>
+                  <option value="financial">Financial</option>
+                  <option value="blight">Blight</option>
+                </select>
+              </div>
+              <div id="targetCategoryGroup" className="hidden">
+                <label className="block text-sm text-gray-400 mb-2">Target Category</label>
+                <select name="targetCategory" className="input-field">
+                  <option value="physical">Physical</option>
+                  <option value="mental">Mental</option>
+                  <option value="spiritual">Spiritual</option>
+                  <option value="motivation">Motivation</option>
+                  <option value="financial">Financial</option>
+                </select>
+              </div>
+              <div className="flex gap-4 pt-4">
+                <button type="button" onClick={() => setShowAddModal(false)} className="btn-secondary flex-1">Cancel</button>
+                <button type="submit" className="btn-epic flex-1">Add Quest</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {showDeleteModal && (
+        <div className="modal">
+          <div className="modal-backdrop" onClick={() => setShowDeleteModal(false)} />
+          <div className="glass-card p-8 relative z-10 w-full max-w-md animate-scaleIn">
+            <h3 className="text-2xl font-bold mb-4">Delete Quest?</h3>
+            <p className="text-gray-400 mb-6">Are you sure you want to delete this quest? This action cannot be undone.</p>
+            <div className="flex gap-4">
+              <button onClick={() => setShowDeleteModal(false)} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={deleteQuest} className="btn-epic flex-1 bg-red-600">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rating Modal */}
+      {showRatingModal && (
+        <div className="modal">
+          <div className="modal-backdrop" onClick={() => setShowRatingModal(false)} />
+          <div className="glass-card p-8 relative z-10 w-full max-w-md animate-scaleIn">
+            <h3 className="text-2xl font-bold mb-4">
+              {pendingComplete?.category === 'blight' ? 'Rate Severity' : 'Rate Performance'}
+            </h3>
+            <p className="text-gray-400 mb-6">How well did you complete this quest?</p>
+            <div className="flex justify-center gap-4 mb-8">
+              {[1, 2, 3, 4, 5].map(val => (
+                <button
+                  key={val}
+                  onClick={() => setRating(val)}
+                  className="transition-all"
+                >
+                  <Star
+                    className={`w-10 h-10 ${val <= rating ? 'fill-current' : ''}`}
+                    style={{ color: val <= rating ? theme.accent : '#666' }}
+                  />
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-4">
+              <button onClick={() => setShowRatingModal(false)} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={confirmRating} className="btn-epic flex-1">Submit</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Achievement Toast */}
+      {achievement && (
+        <div className="achievement-toast glass-card p-6 flex items-center gap-4 animate-slideInRight">
+          <Trophy className="w-8 h-8" style={{ color: theme.accent }} />
+          <div>
+            <h4 className="font-bold text-lg">{achievement.title}</h4>
+            <p className="text-gray-400">{achievement.text}</p>
+          </div>
+        </div>
+      )}
+
+      <style>{styles}</style>
+    </div>
+  );
+};
+
+const styles = `
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
+  
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    overflow: hidden;
+  }
+  
+  .glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+  }
+  
+  .glass-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(var(--accent-rgb), 0.3);
+  }
+  
+  .nav-btn {
+    position: relative;
+    transition: all 0.3s ease;
+  }
+  
+  .nav-btn:hover {
+    background: rgba(var(--accent-rgb), 0.1);
+    transform: translateX(4px);
+  }
+  
+  .nav-btn.active {
+    background: rgba(var(--accent-rgb), 0.2);
+    color: var(--accent);
+    border-left: 3px solid var(--accent);
+  }
+  
+  .btn-epic {
+    background: var(--accent);
+    color: #000;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(var(--accent-rgb), 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .btn-epic:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(var(--accent-rgb), 0.5);
+  }
+  
+  .btn-epic:active {
+    transform: translateY(0);
+  }
+  
+  .btn-epic:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+  
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+  }
+  
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent);
+  }
+  
+  .input-field {
+    width: 100%;
+    padding: 0.875rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: white;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+  
+  .input-field:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1);
+  }
+  
+  .quest-card {
+    animation: fadeInUp 0.5s ease-out;
+    transition: all 0.3s ease;
+  }
+  
+  .quest-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 40px rgba(var(--accent-rgb), 0.2);
+  }
+  
+  .quest-card:hover button {
+    opacity: 1;
+  }
+  
+  .modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+  }
+  
+  .achievement-toast {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    z-index: 1001;
+    min-width: 300px;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes scaleIn {
+    from { transform: scale(0.8); }
+    to { transform: scale(1); }
+  }
+  
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(100px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(var(--accent-rgb), 0.3);
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--accent-rgb), 0.5);
+  }
+`;
+
+export default HerosQuest;
